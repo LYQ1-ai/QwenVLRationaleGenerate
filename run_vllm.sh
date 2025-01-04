@@ -1,0 +1,1 @@
+ vllm serve /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4 --dtype auto --port 8000 --tensor-parallel-size 2 --pipeline-parallel-size 2 --gpu-memory-utilization 0.8 --trust-remote-code --max_model_len 23200

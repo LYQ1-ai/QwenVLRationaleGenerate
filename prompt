@@ -1,0 +1,146 @@
+prompt_TD = """
+使用标签<text></text>括起来的文本是一段新闻摘要，
+请从文字描述的角度出发逐步分析该新闻的真实性，
+并以JSON的格式输出，输出样例如下：
+{
+    'authenticity': '仅使用一个单词表示：fake or real',
+    'Reason': '从文字描述的角度判断该新闻真假性的依据'
+}
+<text>{news text}</text>
+"""
+
+prompt_IM = """
+给定的图片是一篇新闻的封面，
+请从图片是否有经过编辑或者合成的角度逐步分析该新闻的真假性，
+并以JSON的格式输出，使用<out></out>括起来的是一个输出样例,
+{
+    'authenticity': '仅使用一个单词表示：fake or real',
+    'Reason': '判断该新闻真假性的依据'
+}
+"""
+
+
+prompt_IT = """
+使用标签<text></text>括起来的文本是一篇新闻摘要，给定的图片为该新闻的封面，
+请从图片与文字描述是否存在矛盾角度逐步判断该新闻的真假性，
+并以JSON的格式输出，输出样例如下：
+{
+    'authenticity': '仅使用一个单词表示：fake or real',
+    'Reason': '判断该新闻真假性的依据'
+}
+<text>{news text}</text>
+"""
+
+prompt_CS = """
+
+使用标签<text></text>括起来的文本是一篇新闻摘要，而给定的图片为该新闻的封面，
+请从常识的角度通过文字和给定的图片逐步判断该新闻的真假性，
+并以JSON的格式输出，输出样例如下：
+{
+    'authenticity': '仅使用一个单词表示：fake or real',
+    'Reason': '判断该新闻真假性的依据'
+}
+<text>{news text}</text>
+"""
+
+
+
+
+few_shot_prompt = [("""
+    使用标签<text></text>括起来的文本是一段新闻摘要，
+    请从判断该新闻的真实性，输出仅包含一个单词：real or fake,
+    下面将给出几个个示例
+    """),
+    ("""<text>news_text</text> output: {label}""""),
+    ("""<text>news_text</text> output: {label}""""),
+    ("""<text>news_text</text> output: {label}""""),
+    ("""<text>news_text</text> output: {label}"""")]
+
+
+
+
+"few_shot_prompt = [("""
+The text encompassed by the tags <text></text> is a summary of the news.
+Please make a judgment on the authenticity of the news, and the output should contain only one word: real or fake.
+Several examples are provided below.
+"" ").
+("""<text>news_text</text> output: {label}""""),
+("""<text>news_text</text> output: {label}""""),
+("""<text>news_text</text> output: {label}""""),
+("""<text>news_text</text> output: {label}"""")]"
+
+
+prompt_TD = """
+The text enclosed in the <text></text> tags is a news summary.
+Please analyze the authenticity of this news article step by step from the perspective of the textual description.
+Output the results in JSON format as a single line, with the following example structure: {"authenticity": "a single word: fake or real","reason": "The basis for judging the authenticity of the news from the perspective of the textual description." (Ensure to use single quotes for the reason.)}
+news text: <text>{news text}</text>
+"""
+
+prompt_IA = """
+The given image is the cover of a news article.
+Please analyze the authenticity of this news article step by step from the perspective of whether the image has been edited or manipulated.
+Output the results in JSON format as a single line, with the following example structure: {"authenticity": "a single word: fake or real","reason": "The basis for judging the authenticity of the news from the perspective of whether the image has been edited or manipulated." (Ensure to use single quotes for the reason.)}
+"""
+
+prompt_ITC = """
+The text enclosed in the <text></text> tags is a news summary, and the given image is the cover of that news article.
+Please analyze the authenticity of this news article step by step from the perspective of whether there are contradictions between the image and the textual description.
+Output the results in JSON format as a single line, with the following example structure: {"authenticity": "a single word: fake or real","reason": "the basis for judging the authenticity of the news from the perspective of whether there are contradictions between the image and the textual description." (Ensure to use single quotes for the reason.)}
+news text: <text>{news text}</text>
+"""
+
+prompt_CS = """
+The text enclosed in the <text></text> tags is a news summary, and the given image is the cover of that news article.
+Please analyze the authenticity of this news article step by step from the perspective of common sense, considering both the text and the given image.
+Output the results in JSON format as a single line, with the following example structure: {"authenticity": "a single word: fake or real","reason": "the basis for judging the authenticity of the news from the perspective of common sense, considering both the text and the given image." (Ensure to use single quotes for the reason.)}
+news text: <text>{news text}</text>
+"""
+
+prompt_CS_WOIMAGE = """
+The text enclosed in the <text></text> tags is a news summary.
+Please analyze the authenticity of this news article step by step from the perspective of common sense.
+Output the results in the following format: {"authenticity": "a single word: fake or real or other","reason": "The basis for judging the authenticity of the news from the perspective of the common sense." (Ensure to use single quotes for the reason.)}
+news text: <text>{news text}</text>
+"""
+
+
+
+prompt_TD = """
+The text contained in the <text></text> tag is a news summary.
+Please analyze the authenticity of this news article step by step from the perspective of the textual description.
+Output the results in JSON format as a single line, with the following example structure: {"authenticity": "a single word: fake or real","reason": "The basis for judging the authenticity of the news from the perspective of the textual description." (Ensure to use single quotes for the reason.)}
+Several examples are provided below.
+"""
+
+
+prompt_CS = """
+The text contained in the <text></text> tag is a news summary.
+Please analyze the authenticity of this news article step by step from the perspective of the common sense.
+Output the results in JSON format as a single line, with the following example structure: {"authenticity": "a single word: fake or real","reason": "The basis for judging the authenticity of the news from the perspective of the common sense." (Ensure to use single quotes for the reason.)}
+Several examples are provided below.
+"""
+
+prompt_emo = """
+The text in the <text></text> tag is a summary of a news article, and the given picture is the cover of the article.
+Combine the image and the text to analyze the authenticity of the news from the perspective of emotional tendency step by step and give a reason for it
+The output is formatted as follows
+- Authenticity: one word: fake or real
+- Reason: Reasons for judging the authenticity of the news from the point of view of emotional tendency.
+News text: <text>{news text}</text
+"""
+
+
+You are a news veracity analyzer. The text tagged with <text></text> below is a summary of a news story, and the given image is the cover of the news.
+Combining the picture and the text, analyze the authenticity of the news article step-by-step from different perspectives and give the basis for your judgment in English.
+
+You may choose to analyze it from the following angles:
+(1) General social knowledge: whether the news source is reliable and logical
+(2) Textual description: whether the description is deliberately derogatory or biased.
+(3) Emotional tendency: whether the news content is overly emotional or deliberately guides the reader's emotions and provokes conflicts
+(4) Graphic consistency: whether the picture and the text are consistent
+
+Output in the following format:
+- Authenticity: one word: fake or real
+- Reason: The basis for judging the authenticity of the news from the perspective of sentiment analysis.
+News text: <text>{news_text}</text
