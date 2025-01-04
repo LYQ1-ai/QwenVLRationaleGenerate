@@ -14,6 +14,7 @@ from av.container import output
 from tqdm import tqdm
 
 import Util
+import model
 from generateTextRationale import validate_model_output, Qwen2VL, dataloader_func_dict
 
 
@@ -94,12 +95,6 @@ class MessageUtil:
         return [
             self.parser_output(item) for item in outputs
         ]
-
-
-
-
-
-
 
 def validate_model_output(output):
     try:

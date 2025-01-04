@@ -17,28 +17,6 @@ import argparse
 
 from data_loader import load_en_image_text_pair_goss, load_twitter_data, load_politifact
 
-#label_dict = {
-#    'fake':0,
-#    'real':1,
-#    'other':2,
-#    0:'fake',
-#    1:'real',
-#    2:'other',
-#    0.0:'fake',
-#    1.0:'real',
-#    2.0:'other'
-#}
-
-
-label_dict = {
-    "real": 0,
-    "fake": 1,
-    "other": 2,
-    0: 'real',
-    1: 'fake',
-    2: 'other'
-}
-
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 few_shot_template = """Example: 
@@ -150,34 +128,6 @@ class MessageUtil:
             messages.append(msg)
 
         return messages
-
-
-
-def validate_model_output_json(output):
-    try:
-        json_text = output[0].replace('\n','')
-        json_pattern = r'\{.*?\}'
-        if not json_text.startswith('{') or not json_text.endswith('}'):
-            match = re.search(json_pattern, json_text)
-            if not match:
-                return {}
-            json_text = match.group(0)
-        #html_pattern = r'<reason>(.*?)</reason>'
-        #json_text = re.sub(html_pattern, replace_quotes, json_text)
-        result = json.loads(json_text)
-
-        if 'authenticity' in result and 'reason' in result:
-            if result['authenticity'] in label_dict.keys():
-                return result
-            else:
-                result['authenticity']= 'other'
-                return result
-
-
-    except json.JSONDecodeError:
-        # 如果解析失败，返回None
-        return {}
-    return {}
 
 def validate_model_output(output):
     try:
