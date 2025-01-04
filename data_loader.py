@@ -99,6 +99,22 @@ def load_politifact(root_path,batch_size=1):
     dataset = ImageTextPairDataset(df)
     return DataLoader(dataset, batch_size,False,num_workers=4)
 
+def load_weibo_data(root_path,batch_size=1):
+    """
+    {
+        'id':,
+        'image_url':,
+        "text":,
+        'label':,
+        "publish_date":,
+        'image_id':
+    }
+    """
+    data_dir = root_path
+    file_path = f'{data_dir}/weibo.csv'
+    df = pd.read_csv(file_path)
+    df['text'] = df.apply(lambda x : f'{x["text"]} --发布来源：{x["release_source"]}', axis=1)
+    df['image_url'] = df[''] # TODO
 
 
 
