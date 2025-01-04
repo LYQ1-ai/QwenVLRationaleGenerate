@@ -1,3 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+few_shot_template = """Example:
+news text: <text>{news_text}</text>
+output:
+- authenticity: {label}
+- reason: {rationale_content}"""
+
+predict_template = """
+news text: <text>{news_text}</text>
+output:
+"""
+
+prompt_TD = """
+The text contained in the <text></text> tag is a news summary.
+Please analyze the authenticity of this news article step by step from the perspective of the textual description.
+Output in the following format：
+- authenticity: a single word: fake or real
+- reason: The basis for judging the authenticity of the news from the perspective of the textual description.
+Several examples are provided below.
+"""
+
+
+prompt_CS = """
+The text contained in the <text></text> tag is a news summary.
+Please analyze the authenticity of this news article step by step from the perspective of the common sense.
+Output in the following format：
+- authenticity: a single word: fake or real
+- reason: The basis for judging the authenticity of the news from the perspective of the common sense.
+Several examples are provided below.
+"""
+
+
+
 prompt_TD = """
 使用标签<text></text>括起来的文本是一段新闻摘要，
 请从文字描述的角度出发逐步分析该新闻的真实性，

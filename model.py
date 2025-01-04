@@ -4,6 +4,7 @@ from abc import abstractmethod
 import numpy as np
 import pandas as pd
 import torch
+from modelscope import AutoModelForCausalLM, AutoTokenizer
 from qwen_vl_utils import process_vision_info
 from torch.utils.data import DataLoader, Dataset, Sampler
 from tqdm import tqdm
@@ -15,8 +16,9 @@ import requests
 from openai import OpenAI
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 
+
 from Util import generate_remote_qwen_msg, generate_msg
-from data_loader import label_dict
+
 
 
 class RemoteQwenVL:
@@ -133,28 +135,65 @@ class QwenVL:
         messages = [generate_msg(texts[i], image_paths[i]) for i in range(batch_size)]
         return self.batch_inference(messages)
 
+class Qwen:
+
+    def __init__(self, model_dir):
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_dir,
+            torch_dtype="auto",
+            device_map="auto"
+        )
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
+
+    def chat(self,messages,**kwargs):
+        """
+            [
+                {"role": "system", "content": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        """
+        text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
+        max_new_tokens = kwargs.get("max_new_tokens", 256)
+        generated_ids = self.model.generate(
+            **model_inputs,
+            max_new_tokens=kwargs['max_new_tokens']
+        )
+        generated_ids = [
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+        ]
+        return self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
+class RemoteQwen:
+
+    def __init__(self, model_dir):
+        self.model_dir = model_dir
+        self.client = OpenAI(
+            base_url=f"http://localhost:8000/v1",
+            api_key="token-abc123",
+        )
+
+    def chat(self, messages, **kwargs):
+        # 设置默认参数值
+        temperature = kwargs.get('temperature', 0.7)  # 默认温度值
+        top_p = kwargs.get('top_p', 0.8)              # 默认核采样概率
+        max_tokens = kwargs.get('max_tokens', 256)     # 默认最大生成标记数
+        #extra_body = kwargs.get('extra_body',None)
+
+        return self.client.chat.completions.create(
+            model=self.model_dir,
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            #extra_body=extra_body # {"guided_regex": "\w+@\w+\.com\n", "stop": ["\n"]}
+        ).choices[0].message.content
 
 
 
-
-
-
-
-class LLMPredictDataset(Dataset):
-
-    def __init__(self,df):
-        self.df = df
-
-    def __len__(self):
-        return len(self.df)
-    def __getitem__(self, idx):
-        row = self.df.loc[idx]
-        result = {
-                'text': row['text'].tolist(),
-                'label': row['label'].apply(lambda x: label_dict[x]).tolist(),
-            }
-        if 'rationale' in self.df.columns:
-            result['rationale'] = row['rationale'].tolist()
-        return result
 
 

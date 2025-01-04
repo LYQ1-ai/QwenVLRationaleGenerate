@@ -63,6 +63,10 @@ def generate_image_caption(data_iter,similarity_df,model):
 
 
 
+
+
+
+
 if __name__ == "__main__":
     llm = Qwen2VL()
     similarity_df = pd.read_csv('/home/lyq/PycharmProjects/llamaRationaleGenerate/gossipcop_similarity.csv')

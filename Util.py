@@ -1,4 +1,5 @@
 import itertools
+import re
 from abc import abstractmethod
 
 import numpy as np
@@ -86,4 +87,121 @@ def generate_msg(text,image_path):
                 }
             ]
     }
+
+zh_text_messages_template = [
+    {
+        'role': 'system',
+        'content': """您是一名新闻真实性分析员。下面使用 <text></text> 标记的文字是一篇新闻报道的摘要。
+        请从{rationale_type}的角度逐步分析该新闻文章的真实性，并用中文给出判断依据。
+        按以下格式输出：
+        - 真实性：一个词：真 或 假 或 其他(无法判断真假性)
+        - 原因： 从{rationale_type}的角度判断新闻真伪的依据。
+        """
+    },
+    {
+        'role': 'user',
+        'content': """输入：<text>{news_text}</text>
+        输出: 
+        """
+    }
+]
+
+zh_text_few_shot_prompt = """输入：<text>{text}</text>
+输出: 
+- 真实性：{label}
+- 原因：{rationale}
+"""
+
+zh_rationale_type_dict = {
+    'td':"文字描述",
+    'cs':"社会常识"
+}
+
+
+def validate_model_zh_output(output):
+    try:
+        result = {}
+        auth,reason = output.split("\n",maxsplit=1)
+        auth = auth.split('：',maxsplit=1)[-1]
+        if '真' in auth:
+            auth = '真'
+        elif '假' in auth:
+            auth = '真'
+        elif '其他' in auth:
+            auth = '其他'
+        else:
+            raise Exception('格式不匹配')
+
+        reason = reason.split('：',maxsplit=1)[1]
+        return {
+            'auth':auth,
+            'reason':reason
+        }
+
+    except Exception as e:
+        print(e)
+        return {}
+
+
+
+
+def validate_model_en_output(output):
+    try:
+       text = output
+       res = {}
+       auth,reason = text.split('\n',maxsplit=1)
+       if '假' in auth:
+           res['authenticity'] = '假'
+       elif '真' in auth:
+           res['authenticity'] = '真'
+       elif '其他' in auth:
+           res['authenticity'] = '其他'
+       if 'reason:' in reason:
+           res['reason'] = reason.split('reason:',maxsplit=1)[1]
+       elif 'Reason:' in reason:
+           res['reason'] = reason.split('Reason:',maxsplit=1)[1]
+       else:
+           res['reason'] = None
+       return res
+    except Exception as e:
+        return {}
+
+
+
+class TextMessageUtil:
+
+    def __init__(self,lang,rationale_type,few_shot=True):
+        self.lang = lang
+        if lang == 'zh':
+            self.message_template = zh_text_messages_template
+            self.message_template[0]['content'] = self.message_template[0]['content'].format(rationale_type=zh_rationale_type_dict[rationale_type])
+            self.few_shot = few_shot
+            if few_shot:
+                self.message_template[0]['content'] += "以下是一些示例：\n"
+                self.few_shot_template = zh_text_few_shot_prompt
+
+    def generate_text_messages(self,text,few_shot_data=None):
+        """
+        :param text: news text
+        :param rationale_type: rationale_type td or cs
+        :param few_shot_data: few_shot_data = [{
+            text : str,
+            rationale: str,
+            label: real or fake for en ,真 或者 假 for zh
+        }]
+        """
+        msg = self.message_template
+        msg[1]['content'] = msg[1]['content'].format(news_text=text)
+        if few_shot_data and self.few_shot:
+            for shot in few_shot_data:
+                msg[0]['content'] += self.few_shot_template.format(**shot)
+
+        return msg
+
+    def valid_output(self,out):
+        if self.lang == 'zh':
+            return validate_model_zh_output(out)
+        else:
+            return validate_model_en_output(out)
+
 

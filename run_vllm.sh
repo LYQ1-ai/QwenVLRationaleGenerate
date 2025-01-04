@@ -1,1 +1,3 @@
- vllm serve /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4 --dtype auto --port 8000 --tensor-parallel-size 2 --pipeline-parallel-size 2 --gpu-memory-utilization 0.8 --trust-remote-code --max_model_len 23200
+ #vllm serve /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4 --dtype auto --port 8000 --tensor-parallel-size 2 --pipeline-parallel-size 2 --gpu-memory-utilization 0.8 --trust-remote-code --max_model_len 23200
+ #vllm serve /media/lyq/d/Model/Qwen-72B-Chat-Int8 --dtype auto --port 8000 --tensor-parallel-size 2 --pipeline-parallel-size 1 --gpu-memory-utilization 0.9 --trust-remote-code --max_model_len 23200
+ vllm serve /media/lyq/d/Model/Qwen2.5-72B-Instruct-GPTQ-Int8 --dtype auto --port 8000 --tensor-parallel-size 2 --pipeline-parallel-size 1 --gpu-memory-utilization 0.7 --trust-remote-code --max_model_len 23200
