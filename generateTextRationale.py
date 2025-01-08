@@ -1,11 +1,12 @@
 import json
 import re
+from pprint import pprint
 
 import pandas as pd
 import torch
 import yaml
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
-from qwen_vl_utils import process_vision_info
+
 
 import os
 from tqdm import tqdm
@@ -20,8 +21,8 @@ import model
 from Util import TextMessageUtil
 from data_loader import load_en_image_text_pair_goss, load_twitter_data
 
-
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
+#os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 
 def filter_illegal_data(data):
@@ -62,6 +63,7 @@ def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:Te
             out = model.chat(msg)
             print(out)
             dict_out = msg_util.valid_output(out)
+            pprint(dict_out)
             ans[item['id']] = dict_out
         # 定期保存缓存
         if len(ans) +1 % 100 == 0:
@@ -97,7 +99,7 @@ def write_LLM_Rationale(data,save_file_path):
 if __name__ == '__main__':
     config_file_path = '/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatTextRationale_config.yaml'
     config = yaml.load(open(config_file_path),Loader=yaml.FullLoader)
-    Qwen = model.RemoteQwen(config['qwen_path'])
+    Qwen = model.VLLMQwen(config['qwen_path'])
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],batch_size=config['batch_size'])
     few_shot_iter = None
     if config['few_shot']['enable']:

@@ -40,6 +40,8 @@ class ImageTextPairDataset(Dataset):
         }
         """
         self.df = dataframe
+        self.df['id'] = self.df['id'].apply(str)
+        self.df['image_id'] = self.df['image_id'].apply(str)
 
     def __len__(self):
         return self.df.shape[0]

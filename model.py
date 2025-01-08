@@ -15,7 +15,7 @@ import requests
 
 from openai import OpenAI
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
-
+from vllm import LLM, SamplingParams
 
 from Util import generate_remote_qwen_msg, generate_msg
 
@@ -140,9 +140,10 @@ class Qwen:
     def __init__(self, model_dir):
         self.model = AutoModelForCausalLM.from_pretrained(
             model_dir,
-            torch_dtype="auto",
-            device_map="auto"
-        )
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation="flash_attention_2",
+        ).eval()
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
     def chat(self,messages,**kwargs):
@@ -161,7 +162,7 @@ class Qwen:
         max_new_tokens = kwargs.get("max_new_tokens", 256)
         generated_ids = self.model.generate(
             **model_inputs,
-            max_new_tokens=kwargs['max_new_tokens']
+            max_new_tokens=max_new_tokens
         )
         generated_ids = [
             output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
@@ -192,6 +193,26 @@ class RemoteQwen:
             max_tokens=max_tokens,
             #extra_body=extra_body # {"guided_regex": "\w+@\w+\.com\n", "stop": ["\n"]}
         ).choices[0].message.content
+
+
+class VLLMQwen:
+    def __init__(self, model_dir):
+        self.llm = LLM(model_dir,
+                       tensor_parallel_size = 2,
+                       trust_remote_code=True)
+        self.sampling_params = SamplingParams(temperature=0.7, top_p=0.8, repetition_penalty=1.05, max_tokens=512)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    def chat(self,messages,**kwargs):
+        input_ids = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        outputs = self.llm.generate([input_ids], self.sampling_params)
+        return outputs[0].outputs[0].text
+
+
+
 
 
 

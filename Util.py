@@ -1,3 +1,4 @@
+import copy
 import itertools
 import re
 from abc import abstractmethod
@@ -88,23 +89,15 @@ def generate_msg(text,image_path):
             ]
     }
 
-zh_text_messages_template = [
-    {
-        'role': 'system',
-        'content': """您是一名新闻真实性分析员。下面使用 <text></text> 标记的文字是一篇新闻报道的摘要。
+
+zh_system_prompt = """您是一名新闻真实性分析员。下面使用 <text></text> 标记的文字是一篇新闻报道的摘要。
         请从{rationale_type}的角度逐步分析该新闻文章的真实性，并用中文给出判断依据。
         按以下格式输出：
-        - 真实性：一个词：真 或 假 或 其他(无法判断真假性)
-        - 原因： 从{rationale_type}的角度判断新闻真伪的依据。
-        """
-    },
-    {
-        'role': 'user',
-        'content': """输入：<text>{news_text}</text>
-        输出: 
-        """
-    }
-]
+        - 真实性：一个词：真 或 假
+        - 原因： 从{rationale_type}的角度判断新闻真伪的依据。"""
+
+zh_input_prompt = """输入：<text>{news_text}</text>
+输出: """
 
 zh_text_few_shot_prompt = """输入：<text>{text}</text>
 输出: 
@@ -120,15 +113,14 @@ zh_rationale_type_dict = {
 
 def validate_model_zh_output(output):
     try:
-        result = {}
         auth,reason = output.split("\n",maxsplit=1)
         auth = auth.split('：',maxsplit=1)[-1]
-        if '真' in auth:
-            auth = '真'
-        elif '假' in auth:
-            auth = '真'
-        elif '其他' in auth:
+        if '其他' in auth:
             auth = '其他'
+        elif '假' in auth:
+            auth = '假'
+        elif '真' in auth:
+            auth = '真'
         else:
             raise Exception('格式不匹配')
 
@@ -173,11 +165,12 @@ class TextMessageUtil:
     def __init__(self,lang,rationale_type,few_shot=True):
         self.lang = lang
         if lang == 'zh':
-            self.message_template = zh_text_messages_template
-            self.message_template[0]['content'] = self.message_template[0]['content'].format(rationale_type=zh_rationale_type_dict[rationale_type])
+            self.system_prompt = zh_system_prompt
+            self.system_prompt = self.system_prompt.format(rationale_type=zh_rationale_type_dict[rationale_type])
+            self.input_prompt = zh_input_prompt
             self.few_shot = few_shot
             if few_shot:
-                self.message_template[0]['content'] += "以下是一些示例：\n"
+                self.system_prompt += "以下是一些示例：\n"
                 self.few_shot_template = zh_text_few_shot_prompt
 
     def generate_text_messages(self,text,few_shot_data=None):
@@ -190,13 +183,16 @@ class TextMessageUtil:
             label: real or fake for en ,真 或者 假 for zh
         }]
         """
-        msg = self.message_template
-        msg[1]['content'] = msg[1]['content'].format(news_text=text)
+        input_prompt = self.input_prompt.format(news_text=text)
+        system_prompt = self.system_prompt
         if few_shot_data and self.few_shot:
             for shot in few_shot_data:
-                msg[0]['content'] += self.few_shot_template.format(**shot)
+                system_prompt += self.few_shot_template.format(**shot)
 
-        return msg
+        return [
+            {'role':'system','content':system_prompt},
+            {'role':'user','content':input_prompt}
+        ]
 
     def valid_output(self,out):
         if self.lang == 'zh':

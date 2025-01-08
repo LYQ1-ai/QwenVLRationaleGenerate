@@ -1,6 +1,6 @@
 
 dataset: weibo
-qwen_path: /media/lyq/d/Model/Qwen2.5-72B-Instruct-GPTQ-Int8
+qwen_path: /home/lyq/Model/Qwen2.5-72B-Instruct-GPTQ-Int8
 root_path: /home/lyq/DataSet/FakeNews/weibo_dataset
 batch_size: 1
 rationale_name: td
