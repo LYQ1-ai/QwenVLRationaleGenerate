@@ -116,14 +116,12 @@ def validate_model_zh_output(output):
     try:
         auth,reason = output.split("\n",maxsplit=1)
         auth = auth.split('：',maxsplit=1)[-1]
-        if '其他' in auth:
-            auth = '其他'
+        if '真' in auth:
+            auth = '真'
         elif '假' in auth:
             auth = '假'
-        elif '真' in auth:
-            auth = '真'
         else:
-            raise Exception('格式不匹配')
+            auth = '其他'
 
         reason = reason.split('：',maxsplit=1)[1]
         return {

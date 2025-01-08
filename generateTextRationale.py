@@ -27,13 +27,11 @@ os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 def filter_illegal_data(data):
     def is_valid(value):
-        if not all([
+        return all([
             value is not None,
-            value.get('authenticity') is not None,
+            value.get('auth') is not None,
             value.get('reason') is not None
-        ]):
-            return False
-        return True
+        ])
     return {k:v for k, v in data.items() if is_valid(v)}
 
 
