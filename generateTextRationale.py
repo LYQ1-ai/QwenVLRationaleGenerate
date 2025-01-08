@@ -37,6 +37,8 @@ def filter_illegal_data(data):
     return {k:v for k, v in data.items() if is_valid(v)}
 
 
+
+
 def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:TextMessageUtil):
     """
     return dict{
@@ -66,13 +68,11 @@ def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:Te
             pprint(dict_out)
             ans[item['id']] = dict_out
         # 定期保存缓存
-        if len(ans) +1 % 100 == 0:
-            with open(cache_file, 'wb') as f:
-                pickle.dump(ans, f)
+        if len(ans.keys()) % 100 == 0:
+            Util.save_cache(cache_file, ans)
 
     # 最后一次保存缓存
-    with open(cache_file, 'wb') as f:
-        pickle.dump(ans, f)
+    Util.save_cache(cache_file, ans)
 
     return ans
 

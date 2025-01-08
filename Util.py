@@ -1,5 +1,6 @@
 import copy
 import itertools
+import pickle
 import re
 from abc import abstractmethod
 
@@ -201,3 +202,7 @@ class TextMessageUtil:
             return validate_model_en_output(out)
 
 
+def save_cache(cache_file, data):
+    """Helper function to save the cache."""
+    with open(cache_file, 'wb') as f:
+        pickle.dump(data, f)
