@@ -196,11 +196,17 @@ class RemoteQwen:
 
 
 class VLLMQwen:
-    def __init__(self, model_dir):
+    def __init__(self, model_dir,**kwargs):
+        tensor_parallel_size = kwargs.get('tensor_parallel_size', 2)
+        temperature = kwargs.get('temperature', 0.7)
+        top_p = kwargs.get('top_p', 0.8)
+        repetition_penalty = kwargs.get('repetition_penalty', 1.05)
+        max_tokens = kwargs.get('max_tokens', 512)
         self.llm = LLM(model_dir,
-                       tensor_parallel_size = 2,
+                       tensor_parallel_size = tensor_parallel_size,
+                       gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
                        trust_remote_code=True)
-        self.sampling_params = SamplingParams(temperature=0.7, top_p=0.8, repetition_penalty=1.05, max_tokens=512)
+        self.sampling_params = SamplingParams(temperature=temperature, top_p=top_p, repetition_penalty=repetition_penalty, max_tokens=max_tokens)
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
     def chat(self,messages,**kwargs):
         input_ids = self.tokenizer.apply_chat_template(

@@ -20,7 +20,7 @@ import argparse
 import model
 from Util import TextMessageUtil
 from data_loader import load_en_image_text_pair_goss, load_twitter_data
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 #os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
@@ -97,7 +97,7 @@ def write_LLM_Rationale(data,save_file_path):
 if __name__ == '__main__':
     config_file_path = '/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatTextRationale_config.yaml'
     config = yaml.load(open(config_file_path),Loader=yaml.FullLoader)
-    Qwen = model.VLLMQwen(config['qwen_path'])
+    Qwen = model.VLLMQwen(config['qwen_path'],**config['QwenConfig'])
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],batch_size=config['batch_size'])
     few_shot_iter = None
     if config['few_shot']['enable']:
