@@ -20,7 +20,7 @@ import argparse
 import model
 from Util import TextMessageUtil
 from data_loader import load_en_image_text_pair_goss, load_twitter_data
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 #os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
