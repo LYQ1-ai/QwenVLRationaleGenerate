@@ -1,25 +1,8 @@
-import copy
-import itertools
-import pickle
-import re
-from abc import abstractmethod
-
-import numpy as np
-import pandas as pd
-import torch
-from qwen_vl_utils import process_vision_info
-from torch.utils.data import DataLoader, Dataset, Sampler
-from tqdm import tqdm
 import base64
-import json
+import pickle
 
-import requests
-
-from openai import OpenAI
-from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
-
-
-
+import pandas as pd
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 
 prompt_mode = {
     'td': {'text'},
@@ -172,9 +155,9 @@ class TextMessageUtil:
                 self.system_prompt += "以下是一些示例：\n"
                 self.few_shot_template = zh_text_few_shot_prompt
 
-    def generate_text_messages(self,text,few_shot_data=None):
+    def generate_text_messages(self,texts,few_shot_data=None):
         """
-        :param text: news text
+        :param texts: news text
         :param rationale_type: rationale_type td or cs
         :param few_shot_data: few_shot_data = [{
             text : str,
@@ -182,16 +165,17 @@ class TextMessageUtil:
             label: real or fake for en ,真 或者 假 for zh
         }]
         """
-        input_prompt = self.input_prompt.format(news_text=text)
+        input_prompts = [self.input_prompt.format(news_text=text) for text in texts]
         system_prompt = self.system_prompt
         if few_shot_data and self.few_shot:
             for shot in few_shot_data:
                 system_prompt += self.few_shot_template.format(**shot)
 
-        return [
+        messages =  [
             {'role':'system','content':system_prompt},
-            {'role':'user','content':input_prompt}
         ]
+        messages.extend([{'role':'user','content':input_prompt} for input_prompt in input_prompts])
+        return messages
 
     def valid_output(self,out):
         if self.lang == 'zh':
@@ -204,3 +188,60 @@ def save_cache(cache_file, data):
     """Helper function to save the cache."""
     with open(cache_file, 'wb') as f:
         pickle.dump(data, f)
+
+
+def cal_rationale_metrics(y_pred, y_true):
+    # 计算真实类和伪造类的各项指标
+    recall_real = recall_score(y_true, y_pred, average=None, labels=[0])[0]
+    recall_fake = recall_score(y_true, y_pred, average=None, labels=[1])[0]
+    precision_real = precision_score(y_true, y_pred, average=None, labels=[0])[0]
+    precision_fake = precision_score(y_true, y_pred, average=None, labels=[1])[0]
+    f1_real = f1_score(y_true, y_pred, average=None, labels=[0])[0]
+    f1_fake = f1_score(y_true, y_pred, average=None, labels=[1])[0]
+
+    # 宏平均指标由真实类和伪造类的指标算术平均得出
+    recall_macro = (recall_real + recall_fake) / 2
+    precision_macro = (precision_real + precision_fake) / 2
+    f1_macro = (f1_real + f1_fake) / 2
+
+    return {
+        'acc': accuracy_score(y_true, y_pred),
+        'recall': recall_macro,
+        'recall_real': recall_real,
+        'recall_fake': recall_fake,
+        'precision': precision_macro,
+        'precision_real': precision_real,
+        'precision_fake': precision_fake,
+        'f1_macro': f1_macro,
+        'f1_real': f1_real,
+        'f1_fake': f1_fake
+    }
+
+
+
+
+data_dir = '/home/lyq/DataSet/FakeNews/ARG_dataset/zh'
+df = []
+for d in ['train','val','test']:
+    df.append(pd.read_json(f'{data_dir}/{d}.json'))
+df = pd.concat(df,ignore_index=True)
+ld = {
+    "real": 0,
+    "fake": 1,
+    "other": 2,
+    '真':0,
+    '假':1,
+    '其他':2
+}
+
+
+
+df['label'] = df['label'].apply(lambda x: ld[x])
+df['td_pred'] = df['td_pred'].apply(lambda x: ld[x])
+df['cs_pred'] = df['cs_pred'].apply(lambda x: ld[x])
+
+
+
+for rationale_name in ['td','cs']:
+    print(f'{rationale_name} metrics: \n '
+          f'{cal_rationale_metrics(df[f"{rationale_name}_pred"].to_numpy(),df["label"].to_numpy())}')

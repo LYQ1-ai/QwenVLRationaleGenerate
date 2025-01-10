@@ -209,13 +209,16 @@ class VLLMQwen:
         self.sampling_params = SamplingParams(temperature=temperature, top_p=top_p, repetition_penalty=repetition_penalty, max_tokens=max_tokens)
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
     def chat(self,messages,**kwargs):
-        input_ids = self.tokenizer.apply_chat_template(
-            messages,
+        system_prompt = [msg for msg in messages if msg['role']=='system'][0]
+        user_prompts = [msg for msg in messages if msg['role']=='user']
+        input_prompts = [ [system_prompt,prompt] for prompt in user_prompts]
+        input_ids = [self.tokenizer.apply_chat_template(
+            input_prompt,
             tokenize=False,
             add_generation_prompt=True
-        )
-        outputs = self.llm.generate([input_ids], self.sampling_params)
-        return outputs[0].outputs[0].text
+        ) for input_prompt in input_prompts ]
+        outputs = self.llm.generate(input_ids, self.sampling_params)
+        return [ output.outputs[0].text for output in outputs]
 
 
 

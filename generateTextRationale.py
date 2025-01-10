@@ -36,6 +36,22 @@ def filter_illegal_data(data):
 
 
 
+def filter_input_batch(batch,exist_ids_set):
+    """
+    batch : [
+        {
+            'id':,
+            'image_url':,
+            "text":,
+            'label':,
+            "publish_date":,
+            'image_id':
+        }
+    ]
+    """
+    return [item['id'] for item in batch if item['id'] not in exist_ids_set],[item['text'] for item in batch if item['id'] not in exist_ids_set]
+
+
 
 def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:TextMessageUtil):
     """
@@ -56,15 +72,17 @@ def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:Te
     ans = filter_illegal_data(ans)
 
     for batch in tqdm(data):
-        for item in batch:
-            if item['id'] in ans.keys():
-                continue
-            msg = msg_util.generate_text_messages(item['text'],next(few_shot_iter))
-            out = model.chat(msg)
-            print(out)
-            dict_out = msg_util.valid_output(out)
-            pprint(dict_out)
-            ans[item['id']] = dict_out
+
+        batch_ids,batch_texts = filter_input_batch(batch,ans.keys())
+        if len(batch_ids)==0:
+            continue
+        few_shot = next(few_shot_iter) if few_shot_iter is not None else None
+        msg = msg_util.generate_text_messages(batch_texts,few_shot)
+        outs = model.chat(msg)
+        print(outs)
+        dict_outs = [ msg_util.valid_output(out) for out in outs]
+        pprint(dict_outs)
+        ans.update(dict(zip(batch_ids,dict_outs)))
         # 定期保存缓存
         if len(ans.keys()) % 100 == 0:
             Util.save_cache(cache_file, ans)
