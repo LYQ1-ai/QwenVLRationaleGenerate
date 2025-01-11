@@ -1,7 +1,9 @@
 import base64
+import os
 import pickle
 
 import pandas as pd
+from PIL import Image
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 
 def image_path2image_url(image_path):
@@ -244,6 +246,27 @@ def cal_rationale_metrics(y_pred, y_true):
     }
 
 
+
+def read_image_from_url(image_url):
+    # 去掉 'file://' 的前缀
+    if image_url.startswith("file://"):
+        image_path = image_url[7:]  # 去掉前7个字符
+    else:
+        raise ValueError("URL 必须以 'file://' 开头")
+
+    # 如果 image_path 是相对路径，转换为绝对路径
+    image_path = os.path.abspath(image_path)
+
+    # 读取图片
+    try:
+        image = Image.open(image_path)
+        return image
+    except FileNotFoundError:
+        print(f"图片未找到: {image_path}")
+        return None
+    except Exception as e:
+        print(f"读取图片时发生错误: {e}")
+        return None
 
 
 #data_dir = '/home/lyq/DataSet/FakeNews/ARG_dataset/zh'

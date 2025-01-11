@@ -161,14 +161,14 @@ def load_text_few_shot_data(few_shot_dir,num_few_shot,language,rationale_name):
 
 
 
-def load_en_image_text_pair_goss(root_path,batch_size = 1):
+def load_en_image_text_pair_goss(root_path,batch_size,collect_fn):
     data_dir = root_path
     file_path = f'{data_dir}/gossipcop.csv'
     df = pd.read_csv(file_path)
     df['image_id'] = df['id']
     df['image_url'] = df['id'].map(lambda x : f'file://{root_path}/images/{x}_top_img.png')
     dataset = ImageTextPairDataset(df)
-    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=default_collect_fn)
+    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=collect_fn)
 
 
 def get_twitter_image_url_dict(root_path):
@@ -177,7 +177,7 @@ def get_twitter_image_url_dict(root_path):
        file.split('.')[0] : f'file://{image_dir}/{file}' for file in os.listdir(image_dir)
     }
 
-def load_twitter_data(root_path,batch_size = 1):
+def load_twitter_data(root_path,batch_size,collect_fn):
     data_dir = root_path
     file_path = f'{data_dir}/twitter.csv'
     df = pd.read_csv(file_path)
@@ -193,9 +193,9 @@ def load_twitter_data(root_path,batch_size = 1):
     })
 
     dataset = ImageTextPairDataset(df)
-    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=default_collect_fn)
+    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=collect_fn)
 
-def load_weibo_data(root_path,batch_size=1):
+def load_weibo_data(root_path,batch_size,collect_fn):
     """
     [{
         'id':,
@@ -222,13 +222,13 @@ def load_weibo_data(root_path,batch_size=1):
     df['publish_date'] = np.nan
     df['image_id'] = df['available_image_paths'].apply(get_image_id)
     dataset = ImageTextPairDataset(df)
-    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=default_collect_fn)
+    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=collect_fn)
 
 
-def load_data(dataset,root_path,batch_size=1):
+def load_data(dataset,root_path,batch_size=1,collect_fn=default_collect_fn):
     if dataset == 'gossipcop':
-        return load_en_image_text_pair_goss(root_path,batch_size),'en'
+        return load_en_image_text_pair_goss(root_path,batch_size,collect_fn),'en'
     elif dataset == 'twitter':
-        return load_twitter_data(root_path,batch_size),'en'
+        return load_twitter_data(root_path,batch_size,collect_fn),'en'
     elif dataset == 'weibo':
-        return load_weibo_data(root_path,batch_size),'zh'
+        return load_weibo_data(root_path,batch_size,collect_fn),'zh'
