@@ -79,13 +79,12 @@ def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:Te
         few_shot = next(few_shot_iter) if few_shot_iter is not None else None
         msg = msg_util.generate_text_messages(batch_texts,few_shot)
         outs = model.chat(msg)
-        print(outs)
-        dict_outs = [ msg_util.valid_output(out) for out in outs]
+        pprint(outs)
+        dict_outs = [msg_util.valid_output(out) for out in outs]
         pprint(dict_outs)
         ans.update(dict(zip(batch_ids,dict_outs)))
         # 定期保存缓存
-        if len(ans.keys()) % 100 == 0:
-            Util.save_cache(cache_file, ans)
+        Util.save_cache(cache_file, ans)
 
     # 最后一次保存缓存
     Util.save_cache(cache_file, ans)

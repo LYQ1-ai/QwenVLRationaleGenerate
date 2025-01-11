@@ -147,7 +147,8 @@ class FewShotDataLoader(Iterator):
             raise StopIteration("No more batches available.")
 
 
-
+def default_collect_fn(batch):
+    return list(batch)
 
 
 
@@ -167,7 +168,7 @@ def load_en_image_text_pair_goss(root_path,batch_size = 1):
     df['image_id'] = df['id']
     df['image_url'] = df['id'].map(lambda x : f'file://{root_path}/images/{x}_top_img.png')
     dataset = ImageTextPairDataset(df)
-    return DataLoader(dataset, batch_size,False,num_workers=4)
+    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=default_collect_fn)
 
 
 def get_twitter_image_url_dict(root_path):
@@ -192,7 +193,7 @@ def load_twitter_data(root_path,batch_size = 1):
     })
 
     dataset = ImageTextPairDataset(df)
-    return DataLoader(dataset, batch_size,False,num_workers=4)
+    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=default_collect_fn)
 
 def load_weibo_data(root_path,batch_size=1):
     """
@@ -211,8 +212,7 @@ def load_weibo_data(root_path,batch_size=1):
     def get_image_id(image_file_name_list):
         return ast.literal_eval(image_file_name_list)[0].split('/')[-1].split('.')[0]
 
-    def collect_fn(batch):
-        return list(batch)
+
 
     data_dir = root_path
     file_path = f'{data_dir}/weibo.csv'
@@ -222,7 +222,7 @@ def load_weibo_data(root_path,batch_size=1):
     df['publish_date'] = np.nan
     df['image_id'] = df['available_image_paths'].apply(get_image_id)
     dataset = ImageTextPairDataset(df)
-    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=collect_fn)
+    return DataLoader(dataset, batch_size,False,num_workers=4,collate_fn=default_collect_fn)
 
 
 def load_data(dataset,root_path,batch_size=1):
