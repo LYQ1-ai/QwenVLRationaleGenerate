@@ -1,21 +1,17 @@
-import json
 import os
 import pickle
 
 import pandas as pd
-import requests
 import torch
 import yaml
 
 
 import argparse
 
-from av.container import output
 from tqdm import tqdm
 
 import Util
-import model
-from generateTextRationale import validate_model_output, Qwen2VL, dataloader_func_dict
+from generateTextRationale import validate_model_output, dataloader_func_dict
 
 
 
@@ -75,8 +71,8 @@ rationale_prompt_dict = {
 }
 
 model_type_mapping = {
-    'remote':Util.RemoteQwenVL,
-    'local':Util.QwenVL
+    'remote': Util.RemoteQwenVL,
+    'local': Util.QwenVL
 }
 
 

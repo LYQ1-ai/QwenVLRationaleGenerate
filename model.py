@@ -1,17 +1,6 @@
-import itertools
-from abc import abstractmethod
-
-import numpy as np
-import pandas as pd
 import torch
 from modelscope import AutoModelForCausalLM, AutoTokenizer
 from qwen_vl_utils import process_vision_info
-from torch.utils.data import DataLoader, Dataset, Sampler
-from tqdm import tqdm
-import base64
-import json
-
-import requests
 
 from openai import OpenAI
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
@@ -198,17 +187,19 @@ class RemoteQwen:
 class VLLMQwen:
     def __init__(self, model_dir,**kwargs):
         tensor_parallel_size = kwargs.get('tensor_parallel_size', 2)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
+        self.llm = LLM(model_dir,
+                       tensor_parallel_size=tensor_parallel_size,
+                       gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
+                       trust_remote_code=True)
+    def chat(self,messages,**kwargs):
         temperature = kwargs.get('temperature', 0.7)
         top_p = kwargs.get('top_p', 0.8)
         repetition_penalty = kwargs.get('repetition_penalty', 1.05)
         max_tokens = kwargs.get('max_tokens', 512)
-        self.llm = LLM(model_dir,
-                       tensor_parallel_size = tensor_parallel_size,
-                       gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
-                       trust_remote_code=True)
-        self.sampling_params = SamplingParams(temperature=temperature, top_p=top_p, repetition_penalty=repetition_penalty, max_tokens=max_tokens)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
-    def chat(self,messages,**kwargs):
+        sampling_params = SamplingParams(temperature=temperature, top_p=top_p,
+                                              repetition_penalty=repetition_penalty, max_tokens=max_tokens)
+
         system_prompt = [msg for msg in messages if msg['role']=='system'][0]
         user_prompts = [msg for msg in messages if msg['role']=='user']
         input_prompts = [ [system_prompt,prompt] for prompt in user_prompts]
@@ -217,13 +208,44 @@ class VLLMQwen:
             tokenize=False,
             add_generation_prompt=True
         ) for input_prompt in input_prompts ]
-        outputs = self.llm.generate(input_ids, self.sampling_params)
+        outputs = self.llm.generate(input_ids, sampling_params)
         return [ output.outputs[0].text for output in outputs]
 
 
 
+class VLLMQwenVL:
 
+    def __init__(self, model_dir,**kwargs):
+        tensor_parallel_size = kwargs.get('tensor_parallel_size', 2)
+        self.processor = AutoProcessor.from_pretrained(model_dir)
+        self.llm = LLM(model_dir,
+                       tensor_parallel_size=tensor_parallel_size,
+                       gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
+                       trust_remote_code=True)
 
-
+    def chat(self,messages,**kwargs):
+        temperature = kwargs.get('temperature', 0.7)
+        top_p = kwargs.get('top_p', 0.8)
+        repetition_penalty = kwargs.get('repetition_penalty', 1.05)
+        max_tokens = kwargs.get('max_tokens', 512)
+        sampling_params = SamplingParams(temperature=temperature, top_p=top_p,
+                                         repetition_penalty=repetition_penalty, max_tokens=max_tokens)
+        system_prompt = [msg for msg in messages if msg['role'] == 'system'][0]
+        user_prompts = [msg for msg in messages if msg['role'] == 'user']
+        input_prompts = [[system_prompt, prompt] for prompt in user_prompts]
+        input_messages = []
+        for input_prompt in input_prompts:
+            mm_data = {}
+            text = self.processor.apply_chat_template(input_prompt, tokenize=False, add_generation_prompt=True)
+            image_inputs, _ = process_vision_info(input_prompt)
+            if image_inputs is not None:
+                mm_data["image"] = image_inputs
+            llm_inputs = {
+                "prompt": text,
+                "multi_modal_data": mm_data,
+            }
+            input_messages.append(llm_inputs)
+        outputs = self.llm.generate(input_messages, sampling_params)
+        return [output.outputs[0].text for output in outputs]
 
 

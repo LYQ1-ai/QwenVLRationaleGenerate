@@ -1,25 +1,17 @@
-import json
-import re
 from pprint import pprint
 
 import pandas as pd
-import torch
 import yaml
-from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
-
 
 import os
 from tqdm import tqdm
 
-import Util
 import data_loader
 import pickle
 
-import argparse
-
 import model
-from Util import TextMessageUtil
-from data_loader import load_en_image_text_pair_goss, load_twitter_data
+from Util import TextMessageUtil, Util
+
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 #os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'

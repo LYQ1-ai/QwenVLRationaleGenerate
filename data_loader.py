@@ -3,14 +3,11 @@ import itertools
 import os
 import random
 from collections import defaultdict
-from typing import Iterable, Iterator, List, Dict, Any
+from typing import Iterator, List, Dict, Any
 
 import numpy as np
-import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 import pandas as pd
-
-import Util
 
 label_str2int_dict = {
     "real": 0,
