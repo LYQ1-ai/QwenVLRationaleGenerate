@@ -29,7 +29,7 @@ def filter_illegal_data(data):
     def is_valid(value):
         return all([
             value is not None,
-            value.get('auth') is not None,
+            value.get('authenticity') is not None,
             value.get('reason') is not None
         ])
     return {k:v for k, v in data.items() if is_valid(v)}
@@ -113,7 +113,7 @@ def write_LLM_Rationale(data,save_file_path):
 
 if __name__ == '__main__':
     config_file_path = '/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatTextRationale_config.yaml'
-    config = yaml.load(open(config_file_path),Loader=yaml.FullLoader)
+    config = yaml.load(open(config_file_path), Loader=yaml.FullLoader)
     Qwen = model.VLLMQwen(config['qwen_path'],**config['QwenConfig'])
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],batch_size=config['batch_size'])
     few_shot_iter = None

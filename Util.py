@@ -126,7 +126,7 @@ def validate_model_zh_output(output):
 
         reason = reason.split('：',maxsplit=1)[1]
         return {
-            'auth':auth,
+            'authenticity':auth,
             'reason':reason
         }
 
