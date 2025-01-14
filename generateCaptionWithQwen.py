@@ -12,6 +12,9 @@ from model import VLLMQwen, VLLMQwenVL
 
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
+config = yaml.load(open('/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatCaption_config.yaml', 'r'),Loader=yaml.FullLoader)
+
+
 class CaptionMessageUtil:
 
     msgUtil = None
@@ -42,7 +45,7 @@ def generate_image_caption(data_iter,model,lang):
         texts = batch['text']
         images_url = [Util.local_image_url2image_path(image_url) for image_url in batch['image_url']]
         messages = msgUtil.generateCaptionMsg(texts, images_url)
-        outputs = model.chat(messages)
+        outputs = model.chat(messages,**config['QwenConfig']['generateConfig'])
         pprint(outputs)
         result['id'].extend(batch['id'])
         result['caption'].extend(outputs)
@@ -52,10 +55,8 @@ def generate_image_caption(data_iter,model,lang):
 
 
 if __name__ == "__main__":
-    config = yaml.load(open('/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatCaption_config.yaml', 'r'),Loader=yaml.FullLoader)
-    model = VLLMQwenVL(config['qwen_path'],**config['QwenConfig'])
-
+    model = VLLMQwenVL(config['qwen_path'], **config['QwenConfig']['bootConfig'])
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],config['batch_size'],collect_fn=None)
     result = generate_image_caption(data_iter, model,lang)
-    pd.DataFrame(result).to_csv(f'{config["root_path"]}/gossipcop_qwen_image_caption.csv',index=False)
+    pd.DataFrame(result).to_csv(f'{config["root_path"]}/{config["dataset"]}_qwen_image_caption.csv',index=False)
 
