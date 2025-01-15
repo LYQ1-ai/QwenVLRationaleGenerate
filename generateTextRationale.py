@@ -6,16 +6,18 @@ import yaml
 import os
 from tqdm import tqdm
 
+import Util
 import data_loader
 import pickle
 
 import model
-from Util import TextMessageUtil, Util
+from Util import TextMessageUtil
 
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 #os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
-
+config_file_path = '/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatTextRationale_config.yaml'
+config = yaml.load(open(config_file_path), Loader=yaml.FullLoader)
 
 def filter_illegal_data(data):
     def is_valid(value):
@@ -70,7 +72,7 @@ def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:Te
             continue
         few_shot = next(few_shot_iter) if few_shot_iter is not None else None
         msg = msg_util.generate_text_messages(batch_texts,few_shot)
-        outs = model.chat(msg)
+        outs = model.chat(msg,**config["QwenConfig"]["generateConfig"])
         pprint(outs)
         dict_outs = [msg_util.valid_output(out) for out in outs]
         pprint(dict_outs)
@@ -104,9 +106,8 @@ def write_LLM_Rationale(data,save_file_path):
 
 
 if __name__ == '__main__':
-    config_file_path = '/home/lyq/PycharmProjects/QwenVLRationaleGenerate/config/generatTextRationale_config.yaml'
-    config = yaml.load(open(config_file_path), Loader=yaml.FullLoader)
-    Qwen = model.VLLMQwen(config['qwen_path'],**config['QwenConfig'])
+
+    Qwen = model.VLLMQwen(config['qwen_path'],**config['QwenConfig']["bootConfig"])
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],batch_size=config['batch_size'])
     few_shot_iter = None
     if config['few_shot']['enable']:

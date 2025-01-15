@@ -186,7 +186,7 @@ class RemoteQwen:
 
 class VLLMQwen:
     def __init__(self, model_dir,**kwargs):
-        tensor_parallel_size = kwargs.get('tensor_parallel_size', 2)
+        tensor_parallel_size = kwargs.get('tensor_parallel_size', 1)
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self.llm = LLM(model_dir,
                        tensor_parallel_size=tensor_parallel_size,

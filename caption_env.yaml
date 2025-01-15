@@ -1,4 +1,4 @@
-name: LRG
+name: LRGCaption
 channels:
   - pytorch
   - nvidia
@@ -269,4 +269,4 @@ dependencies:
       - xxhash==3.5.0
       - yarl==1.18.3
       - zipp==3.21.0
-prefix: /home/lyq/anaconda3/envs/LRG
+prefix: /home/lyq/anaconda3/envs/LRGCaption
