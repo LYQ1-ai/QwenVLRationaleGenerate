@@ -52,8 +52,12 @@ en_rationale_type_dict = {
 zh_caption_prompt = """你是一个新闻图像描述助手，下面使用<text></text>括起来的是一篇新闻文章，给出的图片是该新闻的封面，请结合新闻文本描述该图像\n"""
 en_caption_prompt = """You are a news image description assistant. Below is a news article enclosed in <text></text> and the given image is the cover of the news, describe the image in relation to the news text\n"""
 
+en_summary_system_prompt = """You are a news summarization assistant. The following user input is a news clip. Summarize the news clip in one paragraph, limiting it to {max_len} words, and focusing on the source, time, place, people, and events of the news:
+"""
+zh_summary_system_prompt = """你是一个新闻总结助手，下面用户输入的为一篇新闻片段，用一段话对该新闻片段进行概括，字数限制在{max_len}个字以内，并且侧重于新闻的来源，时间，地点，人物，事件:
+"""
 
-
+input_prompt = """{news_text}"""
 
 def image_path2image_url(image_path):
     with open(image_path, "rb") as f:
@@ -190,9 +194,24 @@ class VLMessageUtil:
 
 
 
-
-
 class TextMessageUtil:
+
+    def __init__(self, system_prompt,input_prompt):
+        self.system_prompt = system_prompt
+        self.input_prompt = input_prompt
+
+    def generate_text_message(self, texts):
+        input_prompts = [self.input_prompt.format(news_text=text) for text in texts]
+        system_prompt = self.system_prompt
+        messages = [
+            {'role': 'system', 'content': system_prompt},
+        ]
+        messages.extend([{'role': 'user', 'content': input_prompt} for input_prompt in input_prompts])
+        return messages
+
+
+
+class RationaleMessageUtil:
 
     def __init__(self,lang,rationale_type,few_shot=True):
         self.lang = lang

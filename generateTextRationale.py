@@ -11,7 +11,7 @@ import data_loader
 import pickle
 
 import model
-from Util import TextMessageUtil
+from Util import RationaleMessageUtil
 
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
@@ -47,7 +47,7 @@ def filter_input_batch(batch,exist_ids_set):
 
 
 
-def generate_LLM_Text_Rationale(data, model,few_shot_iter,cache_file,msg_util:TextMessageUtil):
+def generate_LLM_Text_Rationale(data, model, few_shot_iter, cache_file, msg_util:RationaleMessageUtil):
     """
     return dict{
         'id':{
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     if config['few_shot']['enable']:
         few_shot_iter = data_loader.load_text_few_shot_data(few_shot_dir=config['few_shot']['few_shot_dir'],num_few_shot=config['few_shot']['num_few_shot'],language=lang,rationale_name=config['rationale_name'])
 
-    message_util = TextMessageUtil(
+    message_util = RationaleMessageUtil(
         lang=lang,
         rationale_type=config['rationale_name'],
         few_shot=config['few_shot']['enable']
