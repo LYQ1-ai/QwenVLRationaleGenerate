@@ -27,7 +27,7 @@ class CaptionMessageUtil:
             self.system_prompt = Util.en_caption_prompt
             self.input_prompt = Util.en_input_prompt
 
-        self.msgUtil = Util.VLMessageUtil(self.system_prompt, self.input_prompt)
+        self.msgUtil = Util.VLMessageUtil(self.system_prompt)
 
     def generateCaptionMsg(self, texts, images_url):
         return self.msgUtil.generate_vl_message(texts, images_url)

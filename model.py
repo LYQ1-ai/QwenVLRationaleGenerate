@@ -15,6 +15,7 @@ class RemoteQwenVL:
 
     def __init__(self,model_dir='/home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4'):
         self.model_dir = model_dir
+        self.image_url_type = 'remote'
         self.url = "http://localhost:8000/v1"
         self.client = OpenAI(
             base_url=self.url,
@@ -72,6 +73,7 @@ class QwenVL:
             attn_implementation="flash_attention_2",
             device_map="auto",
         )
+        self.image_url_type = 'local'
         min_pixels = 256*28*28
         max_pixels = 1280*28*28
         self.processor = AutoProcessor.from_pretrained(model_dir, min_pixels=min_pixels, max_pixels=max_pixels)
@@ -133,6 +135,7 @@ class Qwen:
             device_map="auto",
             attn_implementation="flash_attention_2",
         ).eval()
+        self.image_url_type = 'local'
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
     def chat(self,messages,**kwargs):
@@ -166,6 +169,7 @@ class RemoteQwen:
             base_url=f"http://localhost:8000/v1",
             api_key="token-abc123",
         )
+        self.image_url_type = 'remote'
 
     def chat(self, messages, **kwargs):
         # 设置默认参数值
@@ -192,6 +196,8 @@ class VLLMQwen:
                        tensor_parallel_size=tensor_parallel_size,
                        gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
                        trust_remote_code=True)
+        self.image_url_type = 'local'
+
     def chat(self,messages,**kwargs):
         temperature = kwargs.get('temperature', 0.7)
         top_p = kwargs.get('top_p', 0.8)
@@ -222,6 +228,7 @@ class VLLMQwenVL:
                        tensor_parallel_size=tensor_parallel_size,
                        gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
                        trust_remote_code=True)
+        self.image_url_type = 'local'
 
     def chat(self,messages,**kwargs):
         temperature = kwargs.get('temperature', 0.7)

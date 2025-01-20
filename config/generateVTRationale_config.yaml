@@ -1,10 +1,19 @@
-# parser.add_argument('--dataset', type=str,default='gossipcop')
-#parser.add_argument('--qwen_path', type=str,default='/media/lyq/d/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4')
-#parser.add_argument('--root_path', type=str,default='/home/lyq/DataSet/FakeNews/gossipcop')
-#parser.add_argument('--rationale_name',type=str,default='multi')
 
 dataset: gossipcop
 qwen_path: /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4
 root_path: /home/lyq/DataSet/FakeNews/gossipcop
-model_type: remote
-rationale_name: multi
+batch_size: 1
+rationale_name: img
+few_shot:
+  enable: false
+  num_few_shot: 4
+  few_shot_dir: /home/lyq/DataSet/FakeNews/LLMFND_few_shot
+QwenConfig:
+  bootConfig:
+    gpu_memory_utilization: 0.8
+    tensor_parallel_size: 2
+  generateConfig:
+    temperature: 0.7
+    top_p: 0.8
+    repetition_penalty: 1.05
+    max_tokens: 256

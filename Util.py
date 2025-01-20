@@ -19,6 +19,18 @@ en_system_prompt = """You are a news veracity analyst. The text below, tagged wi
         - Reason: The basis for judging the authenticity of a news article from the perspective of {rationale_type}.
 """
 
+zh_vl_system_prompt = """您是一名新闻真实性分析员。下面使用 <text></text> 标记的文字是一篇新闻报道的摘要,给出的图片为该新闻报道的封面。
+        请结合文字与图片从{rationale_type}的角度逐步分析该新闻文章的真实性，并用中文给出判断依据。
+        按以下格式输出：
+        - 真实性：一个词：真 或 假
+        - 原因： 从{rationale_type}的角度判断新闻真伪的依据。"""
+
+en_vl_system_prompt = """You are a news veracity analyzer. The text tagged with <text></text> is a summary of a news article, and the picture given is the cover of the news article.
+        Please analyze the authenticity of the news article from the perspective of {rationale_type} by combining the text and the picture, and give the basis for your judgment in Chinese.
+        Output in the following format:
+        - Authenticity: One word: Real or Fake
+        - Reason: The basis for judging the authenticity of the news article from the perspective of {rationale_type}."""
+
 
 
 
@@ -42,11 +54,13 @@ Output:
 
 zh_rationale_type_dict = {
     'td':"文字描述",
-    'cs':"社会常识"
+    'cs':"社会常识",
+    'img':'图片描述'
 }
 en_rationale_type_dict = {
     'td':"Textual description",
-    'cs':"Common sense"
+    'cs':"Common sense",
+    'img':'Image Description'
 }
 
 zh_caption_prompt = """你是一个新闻图像描述助手，下面使用<text></text>括起来的是一篇新闻文章，给出的图片是该新闻的封面，请结合新闻文本描述该图像\n"""
@@ -173,9 +187,9 @@ def validate_model_en_output(output):
 
 class VLMessageUtil:
 
-    def __init__(self, system_prompt,input_prompt):
+    def __init__(self, system_prompt):
         self.system_prompt = system_prompt
-        self.input_prompt = input_prompt
+
 
     def generate_vl_message(self, texts, images_path,image_url_type='local'):
         system_msg = {'role':'system','content':[
