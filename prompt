@@ -190,3 +190,11 @@ Output in the following format:
 - Authenticity: one word: fake or real
 - Reason: The basis for judging the authenticity of the news from the perspective of sentiment analysis.
 News text: <text>{news_text}</text
+
+
+
+单文本：文字描述、常识、情感
+
+单图片：是否存在篡改
+
+多模态：图文一致性

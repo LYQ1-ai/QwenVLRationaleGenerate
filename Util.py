@@ -20,16 +20,17 @@ en_system_prompt = """You are a news veracity analyst. The text below, tagged wi
 """
 
 zh_vl_system_prompt = """您是一名新闻真实性分析员。下面使用 <text></text> 标记的文字是一篇新闻报道的摘要,给出的图片为该新闻报道的封面。
-        请结合文字与图片从{rationale_type}的角度逐步分析该新闻文章的真实性，并用中文给出判断依据。
+        请结合文字与图片从{rationale_type}的角度逐步分析该新闻文章的真实性，并用中文给出判断依据，字数限制在{max_tokens}以内
         按以下格式输出：
         - 真实性：一个词：真 或 假
         - 原因： 从{rationale_type}的角度判断新闻真伪的依据。"""
 
 en_vl_system_prompt = """You are a news veracity analyzer. The text tagged with <text></text> is a summary of a news article, and the picture given is the cover of the news article.
-        Please analyze the authenticity of the news article from the perspective of {rationale_type} by combining the text and the picture, and give the basis for your judgment in Chinese.
+        Please analyze the authenticity of the news article step by step from the perspective of {rationale_type} by combining the text and the picture, and give the basis for your judgment in English, and limit the word count to {max_tokens}.
         Output in the following format:
         - Authenticity: One word: Real or Fake
-        - Reason: The basis for judging the authenticity of the news article from the perspective of {rationale_type}."""
+        - Reason: The basis for judging the authenticity of the news article from the perspective of {rationale_type}.
+"""
 
 
 
@@ -55,12 +56,14 @@ Output:
 zh_rationale_type_dict = {
     'td':"文字描述",
     'cs':"社会常识",
-    'img':'图片描述'
+    'img':'图片描述',
+    'itc':'图文一致性'
 }
 en_rationale_type_dict = {
     'td':"Textual description",
     'cs':"Common sense",
-    'img':'Image Description'
+    'img':'Image Description',
+    'itc':'Text-Image Consistency'
 }
 
 zh_caption_prompt = """你是一个新闻图像描述助手，下面使用<text></text>括起来的是一篇新闻文章，给出的图片是该新闻的封面，请结合新闻文本描述该图像\n"""

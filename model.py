@@ -227,7 +227,14 @@ class VLLMQwenVL:
         self.llm = LLM(model_dir,
                        tensor_parallel_size=tensor_parallel_size,
                        gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
-                       trust_remote_code=True)
+                       trust_remote_code=True, rope_scaling={
+        "type": "mrope",
+        "mrope_section": [
+            16,
+            24,
+            24
+        ],
+    })
         self.image_url_type = 'local'
 
     def chat(self,messages,**kwargs):

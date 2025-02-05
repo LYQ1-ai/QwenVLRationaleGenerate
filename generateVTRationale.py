@@ -38,15 +38,15 @@ class VLRationaleMessageUtil:
 
 
 
-    def __init__(self,rationale_type,lang,few_shot=False):
+    def __init__(self,rationale_type,lang,max_tokens,few_shot=False):
         self.lang = lang
         if lang == 'en':
-            self.system_prompt = Util.en_vl_system_prompt.format(rationale_type=rationale_type)
+            self.system_prompt = Util.en_vl_system_prompt.format(rationale_type=Util.en_rationale_type_dict[rationale_type],max_tokens=max_tokens)
             if few_shot:
                 pass # TODO 是否需要few_shot
             self.input_prompt = Util.en_input_prompt
         elif lang == 'zh':
-            self.system_prompt = Util.zh_vl_system_prompt.format(rationale_type=rationale_type)
+            self.system_prompt = Util.zh_vl_system_prompt.format(rationale_type=Util.zh_rationale_type_dict[rationale_type],max_tokens=max_tokens)
             if few_shot:
                 pass # TODO 是否需要few_shot
             self.input_prompt = Util.zh_input_prompt
@@ -172,7 +172,9 @@ if __name__ == '__main__':
         few_shot_iter = data_loader.load_text_few_shot_data(few_shot_dir=config['few_shot']['few_shot_dir'],
                                                             num_few_shot=config['few_shot']['num_few_shot'],
                                                             language=lang, rationale_name=config['rationale_name'])
-    message_util = VLRationaleMessageUtil(rationale_type=config['rationale_name'], lang=lang,
+    message_util = VLRationaleMessageUtil(rationale_type=config['rationale_name'],
+                                          lang=lang,
+                                          max_tokens=config['QwenConfig']['generateConfig']['max_tokens'],
                                           few_shot=config['few_shot']['enable'])
 
     cache_file_path = f'cache/{config["dataset"]}/{config["rationale_name"]}.pkl'
