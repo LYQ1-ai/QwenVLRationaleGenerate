@@ -3,10 +3,10 @@ dataset: gossipcop
 qwen_path: /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4
 root_path: /home/lyq/DataSet/FakeNews/gossipcop
 batch_size: 32
-rationale_name: itc
+rationale_name: img
 few_shot:
-  enable: false
-  num_few_shot: 4
+  enable: true
+  num_few_shot: 6
   few_shot_dir: /home/lyq/DataSet/FakeNews/LLMFND_few_shot
 QwenConfig:
   bootConfig:

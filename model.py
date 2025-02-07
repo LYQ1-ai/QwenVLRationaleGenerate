@@ -10,58 +10,6 @@ from Util import generate_remote_qwen_msg, generate_msg
 
 
 
-class RemoteQwenVL:
-
-
-    def __init__(self,model_dir='/home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4'):
-        self.model_dir = model_dir
-        self.image_url_type = 'remote'
-        self.url = "http://localhost:8000/v1"
-        self.client = OpenAI(
-            base_url=self.url,
-            api_key="token-abc123",
-        )
-
-    def chat(self,messages):
-        """
-        :param messages: [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        'text':"Describe the following pictures"
-                    },
-                    {
-                        "type": "image_url",
-                        'image_url': {
-                            'url':f"data:image/jpeg;base64,{encode_image('/home/lyq/DataSet/FakeNews/gossipcop/images/gossipcop-541230_top_img.png')}"
-                        }
-                    }
-                ]
-            },
-        ]
-        :return: str
-        """
-        return self.client.chat.completions.create(
-            model=self.model_dir,
-            messages=messages
-        ).choices[0].message.content
-
-
-    def batch_inference(self,messages):
-        return [
-            self.chat([msg])
-            for msg in messages
-        ]
-
-    def batch_inference_v2(self,texts,image_paths):
-        batch_size = len(texts)
-        assert batch_size == len(image_paths)
-        messages = [generate_remote_qwen_msg(texts[i],image_paths[i]) for i in range(batch_size)]
-        return self.batch_inference(messages)
-
-
 
 
 
@@ -79,21 +27,6 @@ class QwenVL:
         self.processor = AutoProcessor.from_pretrained(model_dir, min_pixels=min_pixels, max_pixels=max_pixels)
 
     def chat(self,messages,max_len=512):
-        """
-        :param messages: [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "image": "https | file://",
-                    },
-                    {"type": "text", "text": "Describe this image."},
-                ],
-            }
-        ]
-        :return: str
-        """
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
@@ -227,15 +160,8 @@ class VLLMQwenVL:
         self.llm = LLM(model_dir,
                        tensor_parallel_size=tensor_parallel_size,
                        gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
-                       trust_remote_code=True)
-        #, rope_scaling = {
-        #    "type": "mrope",
-        #    "mrope_section": [
-        #        16,
-        #        24,
-        #        24
-        #    ],
-        #}
+                       trust_remote_code=True,
+                       limit_mm_per_prompt={"image": 10})
         self.image_url_type = 'local'
 
     def chat(self,messages,**kwargs):
@@ -245,11 +171,8 @@ class VLLMQwenVL:
         max_tokens = kwargs.get('max_tokens', 512)
         sampling_params = SamplingParams(temperature=temperature, top_p=top_p,
                                          repetition_penalty=repetition_penalty, max_tokens=max_tokens)
-        system_prompt = [msg for msg in messages if msg['role'] == 'system'][0]
-        user_prompts = [msg for msg in messages if msg['role'] == 'user']
-        input_prompts = [[system_prompt, prompt] for prompt in user_prompts]
         input_messages = []
-        for input_prompt in input_prompts:
+        for input_prompt in messages:
             mm_data = {}
             text = self.processor.apply_chat_template(input_prompt, tokenize=False, add_generation_prompt=True)
             image_inputs, _ = process_vision_info(input_prompt)

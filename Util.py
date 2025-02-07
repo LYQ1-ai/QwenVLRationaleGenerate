@@ -2,7 +2,6 @@ import base64
 import os
 import pickle
 
-import pandas as pd
 from PIL import Image
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 
@@ -53,6 +52,15 @@ Output:
 - Reason: {rationale}
 """
 
+en_text_few_shot_output_prompt = """- Authenticity: {label}
+- Reason: {rationale}"""
+
+zh_text_few_shot_output_prompt = """- 真实性：{label}
+- 原因：{rationale}
+"""
+
+
+
 zh_rationale_type_dict = {
     'td':"文字描述",
     'cs':"社会常识",
@@ -76,6 +84,49 @@ zh_summary_system_prompt = """你是一个新闻总结助手，下面用户输�
 
 input_prompt = """{news_text}"""
 
+
+rationale_type2mode = {
+    'td':{'text'},
+    'cs':{'text'},
+    'img':{'image'},
+    'itc':{'text','image'}
+}
+def generateFewShotMessage(few_shot_data,image_url_type='local'):
+    """
+    :param few_shot_data: List[Dict]
+    """
+    few_shot_msgs = []
+    for shot in few_shot_data:
+        input_simple = {
+                "role": "user",
+                "content": []
+            }
+        if 'text' in shot.keys():
+            input_simple["content"].append(shot['text'])
+        if 'image_path' in shot.keys():
+            if image_url_type=='remote':
+                input_simple['content'].append({
+                    "type": "image_url",
+                    'image_url': {
+                        'url': image_path2image_url(shot['image_path'])
+                    }
+                })
+            elif image_url_type=='local':
+                input_simple['content'].append(
+                    {
+                        "type": "image",
+                        'image': f'file://{shot["image_path"]}'
+                    }
+                )
+        few_shot_msgs.append(input_simple)
+        output_simple = {"role": "assistant", "content": shot['rationale']}
+        few_shot_msgs.append(output_simple)
+    return few_shot_msgs
+
+
+
+
+
 def image_path2image_url(image_path):
     with open(image_path, "rb") as f:
         encoded_image = base64.b64encode(f.read())
@@ -90,21 +141,20 @@ def generate_remote_qwen_msg(text,image_path):
     :return: dict
     """
     # text_msg = self.prompt.format(news_text=text)
-    return {
+    msg = {
             "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    'text':text
-                },
-                {
-                    "type": "image_url",
-                    'image_url': {
-                        'url': image_path2image_url(image_path)
-                    }
-                }
-            ]
+            "content": []
     }
+    if text:
+        msg['content'].append({"type": "text",'text':text})
+    if image_path:
+        msg['content'].append({
+            "type": "image_url",
+            'image_url': {
+                'url': image_path2image_url(image_path)
+            }
+        })
+    return msg
 
 
 def generate_msg(text,image_path):
@@ -125,19 +175,17 @@ def generate_msg(text,image_path):
     ]
     """
     #text_msg = self.prompt.format(news_text=text)
-    return {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    'text':text
-                },
+    msg = {"role": "user","content": []}
+    if text:
+        msg['content'].append({"type": "text",'text':text})
+    if image_path:
+        msg['content'].append(
                 {
                     "type": "image",
                     'image': f'file://{image_path}'
                 }
-            ]
-    }
+        )
+    return msg
 
 
 
@@ -190,24 +238,49 @@ def validate_model_en_output(output):
 
 class VLMessageUtil:
 
-    def __init__(self, system_prompt):
+    def __init__(self, system_prompt,):
         self.system_prompt = system_prompt
 
 
-    def generate_vl_message(self, texts, images_path,image_url_type='local'):
-        system_msg = {'role':'system','content':[
-            {'type':'text','text':self.system_prompt},
-        ]}
+    def generate_vl_message(self,image_paths,few_shot_msgs,texts=None,image_url_type='local'):
+        """
+        return: messages = [
+            {"role": "system", "content": "System prompt"},
+            {"role": "user", "content": [
+                {"type": "image", "image": "demo_img1"},
+                {"type": "text", "text": "Input sample 1"}
+            ]},
+            {"role": "assistant", "content": "Output sample 1"},
+            {"role": "user", "content": [
+                {"type": "image", "image": "demo_img2"},
+                {"type": "text", "text": "Input sample 2"}
+            ]},
+            {"role": "assistant", "content": "Output sample 2"}
+        ]
+        """
+        system_msg = {
+                'role': 'system', 'content': [
+                    {'type': 'text', 'text': self.system_prompt},
+                ]
+            }
+        messages = []
 
-        assert len(texts) == len(images_path)
-        messages = [ system_msg]
-        for text,image_path in zip(texts,images_path):
+        texts = texts if texts else [None] * 32
+        image_paths = image_paths if image_paths else [None] * 32
+        for text,image_path in zip(texts,image_paths):
+            msg = [
+                system_msg
+            ]
+            msg.extend(few_shot_msgs)
             if image_url_type == 'remote':
-                messages.append(generate_remote_qwen_msg(text,image_path))
+                msg.append(generate_remote_qwen_msg(text,image_path))
             elif image_url_type == 'local':
-                messages.append(generate_msg(text,image_path))
+                msg.append(generate_msg(text,image_path))
+            messages.append(msg)
 
         return messages
+
+
 
 
 

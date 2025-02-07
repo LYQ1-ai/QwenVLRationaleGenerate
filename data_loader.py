@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import Iterator, List, Dict, Any
 
 import numpy as np
+import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 import pandas as pd
 
@@ -55,7 +56,11 @@ class ImageTextPairDataset(Dataset):
         }
 
 
-class FakeNewsTextRationaleFewShotDataset(Dataset):
+
+
+
+
+class FakeNewsRationaleFewShotDataset(Dataset):
 
     def __init__(self,dataframe):
         """
@@ -76,6 +81,36 @@ class FakeNewsTextRationaleFewShotDataset(Dataset):
     def __getitems__(self,indices):
         return self.df.iloc[indices].to_dict(orient='records')
 
+
+class InfiniteBatchSampler(Sampler):
+    def __init__(self, dataset, batch_size, drop_last=False):
+        super().__init__()
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.drop_last = drop_last  # 新增是否丢弃最后不完整批次
+
+    def __iter__(self):
+        while True:
+            # 生成随机索引
+            indices = torch.randperm(len(self.dataset)).tolist()
+
+            # 计算有效批次数
+            batch_count = len(indices) // self.batch_size
+            if not self.drop_last and (len(indices) % self.batch_size != 0):
+                batch_count += 1
+
+            # 生成完整批次
+            for i in range(batch_count):
+                start = i * self.batch_size
+                end = start + self.batch_size
+                batch = indices[start:end]
+                if len(batch) > 0:  # 确保最后不完整批次的有效性
+                    yield batch
+
+    def __len__(self):
+        if self.drop_last:
+            return len(self.dataset) // self.batch_size
+        return (len(self.dataset) + self.batch_size - 1) // self.batch_size
 
 
 class InfiniteBalancedBatchSampler(Sampler):
@@ -151,10 +186,17 @@ def default_collect_fn(batch):
 
 def load_text_few_shot_data(few_shot_dir,num_few_shot,language,rationale_name):
     few_shot_file_path = f'{few_shot_dir}/{language}_{rationale_name}_shot.csv'
-    dataset = FakeNewsTextRationaleFewShotDataset(
+    dataset = FakeNewsRationaleFewShotDataset(
             pd.read_csv(few_shot_file_path)
         )
     return FewShotDataLoader(dataset,InfiniteBalancedBatchSampler(dataset, num_few_shot))
+
+def load_vl_few_shot_data(few_shot_dir,num_few_shot,language,rationale_name):
+    few_shot_file_path = f'{few_shot_dir}/{language}_{rationale_name}_shot.csv'
+    df = pd.read_csv(few_shot_file_path)
+    df['image_path'] = df['image_path'].apply(lambda x: f'{few_shot_dir}/{x}')
+    dataset = FakeNewsRationaleFewShotDataset(df)
+    return FewShotDataLoader(dataset, InfiniteBatchSampler(dataset, num_few_shot))
 
 
 

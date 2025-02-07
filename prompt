@@ -198,3 +198,61 @@ News text: <text>{news_text}</text
 单图片：是否存在篡改
 
 多模态：图文一致性
+
+messages: [
+            {
+                "role": "system",
+                "content": [
+                    {"type": "text", "text": "System prompt"},
+                    {
+                        "type": "image",
+                        "image": "few shot image 1",
+                    },
+                    {"type": "text", "text": "few shot text 1"},
+                    {
+                        "type": "image",
+                        "image": "few shot image 2",
+                    },
+                    {"type": "text", "text": "few shot text 2"},
+                ],
+            }
+        ]
+
+
+messages: [
+            {
+                "role": "system",
+                "content": [
+                    {"type": "text", "text": "System prompt"}
+                ],
+            },
+            {
+                "role": "system",
+                {
+                        "type": "image",
+                        "image": "few shot image 1",
+                },
+                {"type": "text", "text": "few shot text 1"},
+            },
+            {
+                "role": "system",
+                {
+                        "type": "image",
+                        "image": "few shot image 2",
+                },
+                {"type": "text", "text": "few shot text 2"},
+            }
+        ]
+messages = [
+    {"role": "system", "content": "System prompt"},
+    {"role": "user", "content": [
+        {"type": "image", "image": "demo_img1"},
+        {"type": "text", "text": "Input sample 1"}
+    ]},
+    {"role": "assistant", "content": "Output sample 1"},
+    {"role": "user", "content": [
+        {"type": "image", "image": "demo_img2"},
+        {"type": "text", "text": "Input sample 2"}
+    ]},
+    {"role": "assistant", "content": "Output sample 2"}
+]
