@@ -1,0 +1,15 @@
+
+dataset: weibo
+root_path: /media/shared_d/lyq/DataSet/FakeNews/weibo_dataset
+batch_size: 16
+ModelConfig:
+  cache_file_path: 'deepseek72B_pred.pkl'
+  save_file_path: 'deepseek72B_pred.csv'
+  bootConfig:
+    url: 'http://localhost:11434/v1'
+    api_key: 'ollama'
+    model_name: 'deepseek-r1:70b'
+  generateConfig:
+    temperature: 0.7
+    top_p: 0.8
+    repetition_penalty: 1.00

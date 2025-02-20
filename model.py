@@ -1,7 +1,11 @@
+import asyncio
+
 import torch
 from modelscope import AutoModelForCausalLM, AutoTokenizer
 from qwen_vl_utils import process_vision_info
 
+from openai import AsyncOpenAI, APIError
+import openai
 from openai import OpenAI
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 from vllm import LLM, SamplingParams
@@ -185,5 +189,88 @@ class VLLMQwenVL:
             input_messages.append(llm_inputs)
         outputs = self.llm.generate(input_messages, sampling_params)
         return [output.outputs[0].text for output in outputs]
+
+class RemoteDeepSeek:
+
+    def __init__(self,url, model_name,api_key=None):
+        self.client = OpenAI(
+            base_url=url,
+            api_key=api_key,
+        )
+        self.model_name = model_name
+        self.image_url_type = 'remote'
+
+    def chat(self, messages, **kwargs):
+        # 设置默认参数值
+        temperature = kwargs.get('temperature', 0.7)  # 默认温度值
+        top_p = kwargs.get('top_p', 0.8)              # 默认核采样概率
+        max_tokens = kwargs.get('max_tokens', 256)     # 默认最大生成标记数
+        #extra_body = kwargs.get('extra_body',None)
+
+        return self.client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            #extra_body=extra_body # {"guided_regex": "\w+@\w+\.com\n", "stop": ["\n"]}
+        ).choices[0].message.content
+
+    def batch_inference(self, messages, **kwargs):
+        system_msg = [msg for msg in messages if msg['role']=='system'][0]
+        responses = []
+        for msg in messages:
+            if msg['role']=='user':
+                responses.append(self.chat([system_msg,msg],**kwargs))
+        return responses
+
+
+
+
+class AsyncRemoteDeepSeek:
+
+    def __init__(self, url, model_name, api_key=None):
+        self.client = AsyncOpenAI(  # 使用异步客户端
+            base_url=url,
+            api_key=api_key,
+        )
+        self.model_name = model_name
+        self.image_url_type = 'remote'
+
+    async def chat(self, messages, **kwargs):  # 改为异步方法
+        # 设置默认参数值
+        temperature = kwargs.get('temperature', None)
+        top_p = kwargs.get('top_p', None)
+        max_tokens = kwargs.get('max_tokens', None)
+
+        max_retries = 10
+        retries = 0
+
+        while retries < max_retries:
+            try:
+                response = await self.client.chat.completions.create(  # 添加await
+                    model=self.model_name,
+                    messages=messages,
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_tokens=max_tokens,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                retries += 1
+                if retries < max_retries:
+                    await asyncio.sleep(2)  # 等待2秒后重试
+                else:
+                    print(f'error: {e}')
+                    return None
+
+    async def batch_inference(self, messages, **kwargs):  # 改为异步方法
+        # 并行处理所有用户消息
+        tasks = [self.chat(msg,**kwargs) for msg in messages]
+        responses = await asyncio.gather(*tasks)  # 并行执行所有请求
+        return responses
+
+
+
 
 

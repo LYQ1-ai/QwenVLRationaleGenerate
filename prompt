@@ -11,7 +11,6 @@
 
 
 
-
 few_shot_template = """Example:
 news text: <text>{news_text}</text>
 output:

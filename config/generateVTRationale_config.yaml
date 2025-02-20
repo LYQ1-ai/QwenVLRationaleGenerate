@@ -1,7 +1,7 @@
 
-dataset: gossipcop
+dataset: weibo
 qwen_path: /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4
-root_path: /home/lyq/DataSet/FakeNews/gossipcop
+root_path: /home/lyq/DataSet/FakeNews/weibo_dataset
 batch_size: 32
 rationale_name: img
 few_shot:

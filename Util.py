@@ -91,6 +91,13 @@ rationale_type2mode = {
     'img':{'image'},
     'itc':{'text','image'}
 }
+
+
+
+
+
+
+
 def generateFewShotMessage(few_shot_data,image_url_type='local'):
     """
     :param few_shot_data: List[Dict]
