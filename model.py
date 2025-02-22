@@ -243,7 +243,7 @@ class AsyncRemoteDeepSeek:
         top_p = kwargs.get('top_p', None)
         max_tokens = kwargs.get('max_tokens', None)
 
-        max_retries = 10
+        max_retries = 2
         retries = 0
 
         while retries < max_retries:

@@ -18,6 +18,45 @@ predict_system_zh_prompt_template = """你是一名新闻真实性分析员。�
 predict_system_en_prompt_template = """You are a news veracity analyser. The text given below is a news report.Analyse the truthfulness of the following news item step by step.You can only answer 'Real' or 'Fake'.Here is an example:
 """
 
+predict_system_zh_prompt_template2 = """你是一名新闻真实性分析员,下面给出的文本是一篇新闻报道,请逐步分析以下新闻的真实性,按照以下规则回答[仅返回XML标签]：
+
+<规则>
+1. 输出必须为独立XML行
+2. 禁止任何附加文本
+3. 严格二选一：<label>真</label> 或 <label>假</label>
+</规则>
+
+<违规示例>
+❌ 经核查该新闻为<label>假</label>
+❌ 真实性结论：<label>真</label>
+
+<合规示例>
+<label>真</label>
+"""
+
+predict_zh_input_template = """<待校验新闻>
+{news_content}"""
+
+
+predict_system_en_prompt_template2 = """You are a news authenticity analyst. The text provided below is a news article. Analyze the authenticity of the news according to the following rules [return only XML tags]:
+
+<Rules> 
+1. Output must be a standalone XML line 
+2. No additional text allowed 
+3. Strict binary choice: `<label>real</label>` or `<label>fake</label>` 
+</Rules> 
+
+<Invalid Examples> 
+❌ After verification: `<label>fake</label>` 
+❌ Conclusion: `<label>real</label>` 
+
+<Valid Example> `<label>real</label>` 
+"""
+predict_en_input_template = """<News to Verify>
+{news_content}"""
+
+
+
 
 
 config_file_path = 'config/deepSeekPredict.yaml'
@@ -53,6 +92,56 @@ def filter_input_batch(batch,exist_ids_set):
     ]
     """
     return [item['id'] for item in batch if item['id'] not in exist_ids_set],[item['text'] for item in batch if item['id'] not in exist_ids_set]
+
+
+class DeepSeekPredictUtil2:
+    def __init__(self, lang):
+        self.lang = lang
+        self.system_prompt = predict_system_zh_prompt_template2 if lang == 'zh' else predict_system_en_prompt_template2
+        self.input_template = predict_zh_input_template if lang == 'zh' else predict_en_input_template
+
+    def wrapper_message(self,texts):
+        return [self.wrapper_message0(t) for t in texts]
+
+    def wrapper_message0(self, text):
+        return [
+            {'role': 'system', 'content': self.system_prompt},
+            {'role': 'user', 'content': self.input_template.format(news_content=text)}
+        ]
+
+    @staticmethod
+    def extract_label_content(text):
+        """
+        提取文本中第一个<label>标签的内容
+
+        参数:
+        text (str): 包含XML标签的输入文本
+
+        返回:
+        str/None: 第一个匹配的内容字符串，无匹配时返回None
+
+        示例:
+        extract_first_label('前缀<label>真</label> 后缀')
+        '真'
+        extract_first_label('无标签文本') is None
+        True
+        """
+        match = re.search(r'<label[^>]*>(.*?)</label>', text, flags=re.DOTALL)
+        return match.group(1).strip() if match else None
+
+    def process_output(self, outs):
+        return [self.process_output0(o) for o in outs]
+
+
+    def process_output0(self, out):
+        if out is None:
+            return None
+        if self.lang == 'en':
+            out = out.lower().strip()
+        else:
+            out = out.strip()
+        pred = self.extract_label_content(out)
+        return data_loader.label_str2int_dict.get(pred, None)
 
 
 class DeepSeekPredictMessageUtil:
@@ -204,7 +293,8 @@ if __name__ == '__main__':
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],batch_size=config['batch_size'])
     cache_file_path = f'cache/{config["dataset"]}/{config["ModelConfig"]["cache_file_path"]}'
     save_file_path = f'{config["root_path"]}/{config["ModelConfig"]["save_file_path"]}'
-    msg_Util = DeepSeekPredictMessageUtil(lang)
+    #msg_Util = DeepSeekPredictMessageUtil(lang)
+    msg_Util = DeepSeekPredictUtil2(lang)
     # ans = predict(deepseek,msg_Util,data_iter,cache_file_path)
     ans = asyncio.run(predict(deepseek,msg_Util,data_iter,cache_file_path))
     write_LLM_predict(ans,save_file_path)

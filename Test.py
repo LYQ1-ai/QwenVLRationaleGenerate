@@ -1,18 +1,9 @@
-import yaml
+from openai import OpenAI
 
-import model
+client = OpenAI(  # 使用异步客户端
+            base_url='http://172.31.136.239:32774/v1/',
+            api_key='no',
+        )
 
-
-url = 'http://localhost:32768/v1'
-api_key = 'no'
-model_name = 'DeepSeek-R1-Q4_K_M'
-
-deepseek = model.RemoteDeepSeek(url,model_name,api_key)
-
-out = deepseek.chat(messages=[
-    {
-        "role": "user",
-        "content": "hello"
-    },
-])
-print(out)
+print(client.chat.completions.create(messages=[{"role": "user", "content": "Hello!"}],
+                                     model="DeepSeek-R1-Q4_K_M"))

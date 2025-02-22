@@ -1,14 +1,14 @@
 
-dataset: weibo
-root_path: /media/shared_d/lyq/DataSet/FakeNews/weibo_dataset
-batch_size: 16
+dataset: twitter
+root_path: /media/shared_d/lyq/DataSet/FakeNews/twitter
+batch_size: 64
 ModelConfig:
   cache_file_path: 'deepseek72B_pred.pkl'
   save_file_path: 'deepseek72B_pred.csv'
   bootConfig:
-    url: 'http://localhost:11434/v1'
-    api_key: 'ollama'
-    model_name: 'deepseek-r1:70b'
+    url: 'http://172.31.136.161:8000/v1'
+    api_key: 'vllm'
+    model_name: '/Model/DeepSeek-R1-Distill-Llama-70B-AWQ/'
   generateConfig:
     temperature: 0.7
     top_p: 0.8
