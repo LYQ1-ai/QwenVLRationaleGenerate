@@ -362,6 +362,10 @@ class RationaleMessageUtil:
 
 def save_cache(cache_file, data):
     """Helper function to save the cache."""
+    # 确保父目录存在（如果不存在则自动创建）
+    os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+
+    # 写入文件（文件不存在时会自动新建）
     with open(cache_file, 'wb') as f:
         pickle.dump(data, f)
 

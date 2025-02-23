@@ -19,7 +19,7 @@ from DeepSeekPredict import filter_illegal_data, filter_input_batch
 
 
 
-config_file_path = 'config/deepSeek671Predict.yaml'
+config_file_path = 'config/gen_batch_input_file.yaml'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config_file_path', type=str, default=config_file_path)

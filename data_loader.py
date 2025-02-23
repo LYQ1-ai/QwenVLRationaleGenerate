@@ -264,6 +264,14 @@ def load_weibo_data(root_path,batch_size,collect_fn):
     return DataLoader(dataset, batch_size,False,num_workers=1,collate_fn=collect_fn)
 
 
+def load_weibo_en_data(root_path,batch_size,collect_fn):
+    file_path = os.path.join(root_path, 'weibo_en.csv')
+    df = pd.read_csv(file_path)
+    dataset = ImageTextPairDataset(df)
+    return DataLoader(dataset, batch_size,False,num_workers=1,collate_fn=collect_fn)
+
+
+
 def load_data(dataset,root_path,batch_size=1,collect_fn=default_collect_fn):
     if dataset == 'gossipcop':
         return load_en_image_text_pair_goss(root_path,batch_size,collect_fn),'en'
@@ -271,3 +279,5 @@ def load_data(dataset,root_path,batch_size=1,collect_fn=default_collect_fn):
         return load_twitter_data(root_path,batch_size,collect_fn),'en'
     elif dataset == 'weibo':
         return load_weibo_data(root_path,batch_size,collect_fn),'zh'
+    elif dataset == 'weibo_en':
+        return load_weibo_en_data(root_path,batch_size,collect_fn),'en'

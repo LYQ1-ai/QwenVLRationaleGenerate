@@ -1,7 +1,7 @@
 
-dataset: twitter
-root_path: /media/shared_d/lyq/DataSet/FakeNews/twitter
-batch_size: 64
+dataset: weibo_en
+root_path: /media/shared_d/lyq/DataSet/FakeNews/weibo_en
+batch_size: 256
 ModelConfig:
   cache_file_path: 'deepseek72B_pred.pkl'
   save_file_path: 'deepseek72B_pred.csv'
