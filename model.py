@@ -10,7 +10,7 @@ from openai import OpenAI
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 from vllm import LLM, SamplingParams
 
-from Util import generate_remote_qwen_msg, generate_msg
+from Util import generate_msg
 
 
 
@@ -34,7 +34,7 @@ class QwenVL:
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-        image_inputs, video_inputs = process_vision_info(messages)
+        image_inputs, video_inputs, video_kwargs = process_vision_info(messages,return_video_kwargs=True)
         inputs = self.processor(
             text=[text],
             images=image_inputs,
@@ -160,7 +160,7 @@ class VLLMQwenVL:
 
     def __init__(self, model_dir,**kwargs):
         tensor_parallel_size = kwargs.get('tensor_parallel_size', 2)
-        self.processor = AutoProcessor.from_pretrained(model_dir)
+        self.processor = AutoProcessor.from_pretrained(model_dir, use_fast=True)
         self.llm = LLM(model_dir,
                        tensor_parallel_size=tensor_parallel_size,
                        gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
@@ -179,7 +179,7 @@ class VLLMQwenVL:
         for input_prompt in messages:
             mm_data = {}
             text = self.processor.apply_chat_template(input_prompt, tokenize=False, add_generation_prompt=True)
-            image_inputs, _ = process_vision_info(input_prompt)
+            image_inputs, video_inputs, video_kwargs = process_vision_info(input_prompt, return_video_kwargs=True)
             if image_inputs is not None:
                 mm_data["image"] = image_inputs
             llm_inputs = {
@@ -227,11 +227,11 @@ class RemoteDeepSeek:
 
 
 
-class AsyncRemoteDeepSeek:
+class AsyncRemoteLLM:
 
-    def __init__(self, url, model_name, api_key=None):
+    def __init__(self, base_url, model_name, api_key='no'):
         self.client = AsyncOpenAI(  # 使用异步客户端
-            base_url=url,
+            base_url=base_url,
             api_key=api_key,
         )
         self.model_name = model_name
@@ -272,5 +272,25 @@ class AsyncRemoteDeepSeek:
 
 
 
+class VLLMDeepSeek:
+
+    def __init__(self, model_dir,**kwargs):
+        tensor_parallel_size = kwargs.get('tensor_parallel_size', 2)
+        self.processor = AutoProcessor.from_pretrained(model_dir)
+        self.llm = LLM(model_dir,
+                       tensor_parallel_size=tensor_parallel_size,
+                       gpu_memory_utilization=kwargs.get('gpu_memory_utilization', 0.8),
+                       trust_remote_code=True)
+        self.image_url_type = 'local'
+
+    def chat(self,messages,**kwargs):
+        temperature = kwargs.get('temperature', 0.7)
+        top_p = kwargs.get('top_p', 0.8)
+        repetition_penalty = kwargs.get('repetition_penalty', 1.05)
+        max_tokens = kwargs.get('max_tokens', 512)
+        sampling_params = SamplingParams(temperature=temperature, top_p=top_p,
+                                         repetition_penalty=repetition_penalty, max_tokens=max_tokens)
+        outputs = self.llm.generate(messages, sampling_params)
+        return [output.outputs[0].text for output in outputs]
 
 

@@ -1,4 +1,5 @@
 import base64
+import mimetypes
 import os
 import pickle
 
@@ -109,7 +110,9 @@ def generateFewShotMessage(few_shot_data,image_url_type='local'):
                 "content": []
             }
         if 'text' in shot.keys():
-            input_simple["content"].append(shot['text'])
+            input_simple["content"].append({'type':'text', 'text':shot['text']})
+        else:
+            input_simple["content"].append({'type':'text', 'text':'News Image'})
         if 'image_path' in shot.keys():
             if image_url_type=='remote':
                 input_simple['content'].append({
@@ -131,14 +134,18 @@ def generateFewShotMessage(few_shot_data,image_url_type='local'):
     return few_shot_msgs
 
 
-
-
-
 def image_path2image_url(image_path):
+    # 检测文件MIME类型
+    mime_type, _ = mimetypes.guess_type(image_path)
+    if not mime_type or not mime_type.startswith('image/'):
+        raise ValueError(f"Unsupported image format: {image_path}")
+
+    # 读取并编码图片
     with open(image_path, "rb") as f:
-        encoded_image = base64.b64encode(f.read())
-    encoded_image_text = encoded_image.decode("utf-8")
-    return f"data:image;base64,{encoded_image_text}"
+        encoded_image = base64.b64encode(f.read()).decode("utf-8")
+
+    # 构造符合规范的Data URL
+    return f"data:{mime_type};base64,{encoded_image}"
 
 
 def generate_remote_qwen_msg(text,image_path):
@@ -161,6 +168,10 @@ def generate_remote_qwen_msg(text,image_path):
                 'url': image_path2image_url(image_path)
             }
         })
+
+    if len(msg['content'])==1:
+        msg['content'] = msg['content'][0]
+
     return msg
 
 
@@ -249,8 +260,15 @@ class VLMessageUtil:
         self.system_prompt = system_prompt
 
 
-    def generate_vl_message(self,image_paths,few_shot_msgs,texts=None,image_url_type='local'):
+    def generate_vl_message(self,batch_message,few_shot_msgs,image_url_type='local'):
         """
+        :param batch_message: [
+            {
+                'id':str,
+                'image_path':str,
+                'text':str
+            }
+        ]
         return: messages = [
             {"role": "system", "content": "System prompt"},
             {"role": "user", "content": [
@@ -266,26 +284,25 @@ class VLMessageUtil:
         ]
         """
         system_msg = {
-                'role': 'system', 'content': [
-                    {'type': 'text', 'text': self.system_prompt},
-                ]
+                'role': 'system', 'content': self.system_prompt,
             }
         messages = []
-
-        texts = texts if texts else [None] * 32
-        image_paths = image_paths if image_paths else [None] * 32
-        for text,image_path in zip(texts,image_paths):
+        batch_ids = []
+        for item in batch_message:
             msg = [
                 system_msg
             ]
-            msg.extend(few_shot_msgs)
+            batch_ids.append(item['id'])
+            text,image_path = item.get('text','News Image'),item.get('image_path',None)
+            if few_shot_msgs:
+                msg.extend(few_shot_msgs)
             if image_url_type == 'remote':
                 msg.append(generate_remote_qwen_msg(text,image_path))
             elif image_url_type == 'local':
                 msg.append(generate_msg(text,image_path))
             messages.append(msg)
 
-        return messages
+        return messages,batch_ids
 
 
 

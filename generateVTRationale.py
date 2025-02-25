@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pickle
 from pprint import pprint
@@ -59,42 +60,35 @@ class VLRationaleMessageUtil:
         valid_func = Util.validate_model_zh_output if self.lang == 'zh' else Util.validate_model_en_output
         return [ valid_func(out) for out in outputs]
 
-    def wrapper_message(self,texts,image_url_list,few_shot_data,image_url_type):
+    def wrapper_message(self,batch,few_shot_data,image_url_type):
         """
         :param texts:
         :param image_url_list: file path
         :param few_shot_data: list[Dict],has keys [text,image_path,rationale,label]
         """
         few_shot_msgs = None
+        use_text = 'text' in Util.rationale_type2mode[self.rationale_type]
+        use_image = 'image' in Util.rationale_type2mode[self.rationale_type]
         if few_shot_data:
             for shot in few_shot_data:
-                if 'text' in shot.keys():
+                if use_text:
                     shot['text'] = self.input_prompt.format(news_text=shot['text'])
                 shot['rationale'] = self.few_shot_output_prompt.format(label=shot['label'],rationale=shot['rationale'])
-
-            few_shot_msgs = Util.generateFewShotMessage(few_shot_data)
-
+            few_shot_msgs = Util.generateFewShotMessage(few_shot_data,image_url_type=image_url_type)
 
 
+        batch_message = []
+        for item in batch:
+            msg = {}
+            msg['id'] = item['id']
+            if use_text:
+                msg['text'] = self.input_prompt.format(news_text=item['text'])
+            if use_image:
+                msg['image_path'] = Util.local_image_url2image_path(item['image_url'])
 
-        input_prompts = [self.input_prompt.format(news_text=text) for text in texts] if 'text' in Util.rationale_type2mode[self.rationale_type] else None
-        image_path_list = [Util.local_image_url2image_path(image_url) for image_url in image_url_list] if 'image' in Util.rationale_type2mode[self.rationale_type] else None
-        return self.msgUtil.generate_vl_message(image_path_list,few_shot_msgs,texts=input_prompts,image_url_type=image_url_type)
+            batch_message.append(msg)
 
-def preprocess_input(batch,exits_id):
-    result = {
-        'id':[],
-        'text':[],
-        'image_path':[]
-    }
-    for i in range(len(batch['id'])):
-        if batch['id'][i] in exits_id:
-            continue
-        result['id'].append(batch['id'][i])
-        result['text'].append(batch['text'][i])
-        result['image_path'].append(batch['image_url'][i][len('file://'):])
-
-    return result
+        return self.msgUtil.generate_vl_message(batch_message,few_shot_msgs,image_url_type=image_url_type)
 
 
 
@@ -122,10 +116,7 @@ def filter_input_batch(batch,exist_ids_set):
     ]
     return generate id list,generate text list,generate image url list
     """
-    return ([item['id'] for item in batch if item['id'] not in exist_ids_set],
-            [item['text'] for item in batch if item['id'] not in exist_ids_set],
-            [item['image_url'] for item in batch if item['id'] not in exist_ids_set]
-            )
+    return [item for item in batch if item['id'] not in exist_ids_set]
 
 def generate_LLM_Text_Rationale(data, model, few_shot_iter, cache_file, msg_util:VLRationaleMessageUtil,image_url_type):
     """
@@ -145,19 +136,22 @@ def generate_LLM_Text_Rationale(data, model, few_shot_iter, cache_file, msg_util
 
     ans = filter_illegal_data(ans)
 
+    generate_config = config['QwenConfig']['generateConfig']
+    del generate_config['max_tokens']
+
     for batch in tqdm(data):
 
-        batch_ids,batch_texts,batch_image_urls = filter_input_batch(batch,ans.keys())
-        if len(batch_ids)==0:
+        batch_after_filter = filter_input_batch(batch,ans.keys())
+        if len(batch_after_filter)==0:
             continue
         few_shot = next(few_shot_iter) if few_shot_iter is not None else None
-        msgs = msg_util.wrapper_message(batch_texts,batch_image_urls,few_shot,image_url_type=image_url_type)
+        msgs,batch_ids = msg_util.wrapper_message(batch_after_filter,few_shot,image_url_type=image_url_type)
         pprint(f'input message: {msgs}')
-        outs = model.chat(msgs,**config["QwenConfig"]["generateConfig"])
+        outs = model.chat(msgs,batch_ids=batch_ids,**generate_config)
         pprint(outs)
         dict_outs = msg_util.valid_outputs(outs)
         pprint(dict_outs)
-        ans.update(dict(zip(batch_ids,dict_outs)))
+        ans.update(dict(zip(batch_ids, dict_outs)))
         # 定期保存缓存
         Util.save_cache(cache_file, ans)
 
@@ -166,6 +160,48 @@ def generate_LLM_Text_Rationale(data, model, few_shot_iter, cache_file, msg_util
 
     return ans
 
+
+async def async_generate_LLM_Text_Rationale(data, model, few_shot_iter, cache_file, msg_util:VLRationaleMessageUtil,image_url_type):
+    """
+    return dict{
+        'id':{
+            authenticity:str
+            reason:str
+        }
+    }
+    """
+    # 检查缓存是否存在并加载
+    if os.path.exists(cache_file):
+        with open(cache_file, 'rb') as f:
+            ans = pickle.load(f)
+    else:
+        ans = {}
+
+    ans = filter_illegal_data(ans)
+
+    generate_config = config['QwenConfig']['generateConfig']
+    del generate_config['max_tokens']
+
+    for batch in tqdm(data):
+
+        batch_after_filter = filter_input_batch(batch,ans.keys())
+        if len(batch_after_filter)==0:
+            continue
+        few_shot = next(few_shot_iter) if few_shot_iter is not None else None
+        pprint(f'input message: {batch_after_filter}')
+        msgs,batch_ids = msg_util.wrapper_message(batch_after_filter,few_shot,image_url_type=image_url_type)
+        outs = await model.batch_inference(msgs,batch_ids=batch_ids,**generate_config)
+        pprint(outs)
+        dict_outs = msg_util.valid_outputs(outs)
+        pprint(dict_outs)
+        ans.update(dict(zip(batch_ids, dict_outs)))
+        # 定期保存缓存
+        Util.save_cache(cache_file, ans)
+
+    # 最后一次保存缓存
+    Util.save_cache(cache_file, ans)
+
+    return ans
 def write_VL_LLM_Rationale(data,save_file_path):
     """
     :param data: dict{
@@ -185,7 +221,11 @@ def write_VL_LLM_Rationale(data,save_file_path):
 
 
 if __name__ == '__main__':
-    Qwen = model.VLLMQwenVL(config['qwen_path'], **config['QwenConfig']["bootConfig"])
+    if 'LocalConfig' in config['QwenConfig']:
+        Qwen = model.VLLMQwenVL(config['qwen_path'], **config['QwenConfig']["LocalConfig"])
+    else:
+        Qwen = model.AsyncRemoteLLM(**config['QwenConfig']["RemoteConfig"])
+
     data_iter, lang = data_loader.load_data(config['dataset'], config['root_path'], batch_size=config['batch_size'])
     few_shot_iter = None
     if config['few_shot']['enable']:
@@ -199,6 +239,9 @@ if __name__ == '__main__':
 
     cache_file_path = f'cache/{config["dataset"]}/{config["rationale_name"]}.pkl'
     image_url_type = Qwen.image_url_type
-    data = generate_LLM_Text_Rationale(data_iter, Qwen, few_shot_iter, cache_file_path, message_util,image_url_type)
+    if image_url_type == 'local':
+        data = generate_LLM_Text_Rationale(data_iter, Qwen, few_shot_iter, cache_file_path, message_util,image_url_type)
+    else:
+        data = asyncio.run(async_generate_LLM_Text_Rationale(data_iter, Qwen, few_shot_iter, cache_file_path, message_util,image_url_type))
     save_file_path = f'{config["root_path"]}/{config["rationale_name"]}.csv'
     write_VL_LLM_Rationale(data, save_file_path)

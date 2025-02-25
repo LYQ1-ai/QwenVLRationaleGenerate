@@ -3,8 +3,23 @@
 
 
 
+您是一名新闻真实性分析员。下面使用 <text></text> 标记的文字是一篇新闻报道的摘要,给出的图片为该新闻报道的封面。
+请结合文字与图片从图文一致性的角度逐步分析该新闻文章的真实性，并用中文给出判断依据，字数限制在256个字以内
+按以下格式输出：
+- 真实性：一个词：真 或 假
+- 原因： 从图文一致性的角度判断新闻真伪的依据。
+
+<text>中國又一个上天的项目！ 直径500米耗资近3亿，前几年被吹上天，建在贵州省境内的“天眼”，现在成了废墟，墙国所有的高科技其实都是在骗钱骗老百姓。愚民教育真的能保江山稳固吗？</text>
 
 
+
+You are a news veracity analyst. The text below, tagged with <text></text>, is a summary of a news article.
+Please analyze the authenticity of the news article step by step from the perspective of Text-Image Consistency and give the basis for your judgment in English.
+Output in the following format:
+- Authenticity: One word: Real or Fake
+- Reason: The basis for judging the authenticity of a news article from the perspective of Text-Image.
+
+<text></text>
 
 
 

@@ -289,7 +289,7 @@ def write_LLM_predict(data,save_file_path):
 
 
 if __name__ == '__main__':
-    deepseek = model.AsyncRemoteDeepSeek(**config['ModelConfig']['bootConfig'])
+    deepseek = model.AsyncRemoteLLM(**config['ModelConfig']['bootConfig'])
     data_iter,lang = data_loader.load_data(config['dataset'],config['root_path'],batch_size=config['batch_size'])
     cache_file_path = f'cache/{config["dataset"]}/{config["ModelConfig"]["cache_file_path"]}'
     save_file_path = f'{config["root_path"]}/{config["ModelConfig"]["save_file_path"]}'
