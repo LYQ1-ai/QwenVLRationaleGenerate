@@ -1,15 +1,20 @@
 
-dataset: weibo_en
-root_path: /media/shared_d/lyq/DataSet/FakeNews/weibo_en
-batch_size: 256
+dataset: twitter
+root_path: /home/lyq/DataSet/FakeNews/twitter
+batch_size: 1
 ModelConfig:
   cache_file_path: 'deepseek671B_pred.pkl'
   save_file_path: 'deepseek671B_pred.csv'
   bootConfig:
-    url: 'https://api.siliconflow.cn/v1'
+    # url: 'https://api.siliconflow.cn/v1'
     # url: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-    api_key: 'sk-jqfvsknbokhwisxoutniymobrpreewwaifvqgeddxqnedekl'
-    model_name: 'Pro/deepseek-ai/DeepSeek-R1'
+    url: 'http://localhost:32771/v1'
+    api_key: 'no'
+    # api_key: 'sk-jqfvsknbokhwisxoutniymobrpreewwaifvqgeddxqnedekl'
+    # api_key: 'sk-e44819fdea664554bf96567a1da78266'
+    model_name: DeepSeek-R1-Q4_K_M
+    # model_name: 'deepseek-ai/DeepSeek-R1'
+    # model_name: 'deepseek-r1'
   generateConfig:
     temperature: 0.7
     top_p: 0.8

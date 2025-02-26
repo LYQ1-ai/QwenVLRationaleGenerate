@@ -169,6 +169,12 @@ class VLLMQwenVL:
         self.image_url_type = 'local'
 
     def chat(self,messages,**kwargs):
+        """
+        messages : [
+            msg1[]
+            msg2[]
+        ]
+        """
         temperature = kwargs.get('temperature', 0.7)
         top_p = kwargs.get('top_p', 0.8)
         repetition_penalty = kwargs.get('repetition_penalty', 1.05)
@@ -189,6 +195,9 @@ class VLLMQwenVL:
             input_messages.append(llm_inputs)
         outputs = self.llm.generate(input_messages, sampling_params)
         return [output.outputs[0].text for output in outputs]
+
+    def __call__(self, *args, **kwargs):
+        return self.chat(*args, **kwargs)
 
 class RemoteDeepSeek:
 
@@ -269,6 +278,10 @@ class AsyncRemoteLLM:
         tasks = [self.chat(msg,**kwargs) for msg in messages]
         responses = await asyncio.gather(*tasks)  # 并行执行所有请求
         return responses
+
+    async def __call__(self, *args, **kwargs):
+        return await self.batch_inference(*args, **kwargs)
+
 
 
 

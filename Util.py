@@ -228,9 +228,6 @@ def validate_model_zh_output(output):
         print(e)
         return {}
 
-
-
-
 def validate_model_en_output(output):
     try:
        text = output
