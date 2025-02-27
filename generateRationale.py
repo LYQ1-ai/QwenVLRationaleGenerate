@@ -5,13 +5,13 @@ import pprint
 
 import pandas as pd
 import yaml
-
+from tqdm import tqdm
 
 import data_loader
 import genRationaleUtil
 import model
 
-CACHE_DIR = '/home/lyq/PycharmProjects/llamaRationaleGenerate/cache'
+CACHE_DIR = '/home/lyq/PycharmProjects/QwenVLRationaleGenerate/cache'
 
 
 
@@ -42,8 +42,9 @@ async def async_generate_rationale(data_iter, qwen, msg_Util,few_shot_data_iter=
     cache_manager = genRationaleUtil.CacheManager(cache_file_path)
 
     res = cache_manager.load_cache()
+    printer = genRationaleUtil.CustomPrinter()
 
-    for batch in data_iter:
+    for batch in tqdm(data_iter):
         batch = genRationaleUtil.filter_batch_input(batch,set(res.keys()))
         batch_ids = [item['source_id'] for item in batch]
         if len(batch_ids) ==0:
@@ -51,15 +52,15 @@ async def async_generate_rationale(data_iter, qwen, msg_Util,few_shot_data_iter=
         few_shot_data = next(few_shot_data_iter) if few_shot_data_iter else None
         messages = [msg_Util.wrapper_message(item,few_shot_data) for item in batch]
         print(f'=================================================input message=================================================\n')
-        pprint.pprint(messages)
+        printer.pprint(messages)
         
         outs = await qwen(messages,**config['ModelConfig']['generateConfig'])
         print(f'=================================================raw out=================================================\n')
-        pprint.pprint(outs)
-        dict_outs = msg_Util.valid_output(outs)
+        printer.pprint(outs)
+        dict_outs = [msg_Util.valid_output(out) for out in outs]
         print(
             f'=================================================dict out=================================================\n')
-        pprint.pprint(dict_outs)
+        printer.pprint(dict_outs)
         batch_outs = genRationaleUtil.filter_batch_out(dict(zip(batch_ids, dict_outs)),set(res.keys()))
         res.update(batch_outs)
         cache_manager.save_cache(res)
@@ -84,7 +85,7 @@ def generate_rationale(data_iter, qwen, msg_Util, few_shot_data_iter=None):
 
     res = cache_manager.load_cache()
 
-    for batch in data_iter:
+    for batch in tqdm(data_iter):
         batch = genRationaleUtil.filter_batch_input(batch, set(res.keys()))
         batch_ids = [item['source_id'] for item in batch]
         if len(batch_ids) == 0:

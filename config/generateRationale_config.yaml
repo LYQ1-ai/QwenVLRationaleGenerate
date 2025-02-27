@@ -1,21 +1,21 @@
 
-dataset: weibo
-root_path: /home/lyq/DataSet/FakeNews/weibo_dataset
+dataset: gossipcop
+root_path: /media/shared_d/lyq/DataSet/FakeNews/gossipcop
 batch_size: 128
-rationale_type: img
+rationale_type: itc
 rationale_max_length: 256
 few_shot:
   enable: true
   nums_few_shot: 4
-  root_path: /home/lyq/DataSet/FakeNews/LLMFND_few_shot
+  root_path: /media/shared_d/lyq/DataSet/FakeNews/LLMFND_few_shot
 ModelConfig:
-  # RemoteConfig:
-  #  base_url: 'http://172.31.136.239:8000/v1/'
-  #  model_name: '/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4/'
-  LocalConfig:
-    model_dir: '/home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4/'
-    gpu_memory_utilization: 0.9
-    tensor_parallel_size: 4
+  RemoteConfig:
+   base_url: 'http://localhost:8000/v1/'
+   model_name: '/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4/'
+  # LocalConfig:
+  #   model_dir: '/home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4/'
+  #   gpu_memory_utilization: 0.9
+  #   tensor_parallel_size: 4
   generateConfig:
     temperature: 0.7
     top_p: 0.8

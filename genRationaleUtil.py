@@ -2,6 +2,7 @@ import base64
 import mimetypes
 import os
 import pickle
+from pprint import PrettyPrinter
 from tempfile import NamedTemporaryFile
 
 import data_loader
@@ -59,13 +60,13 @@ en_vl_img_system_prompt = """You are a news veracity analyst. The picture given 
         - Reason: The basis for judging the authenticity of the news from the perspective of the Image description.
 """
 
-zh_input_few_shot_prompt = """输入：<text>{news_text}</text>"""
+zh_input_prompt = """输入：<text>{news_text}</text>"""
 zh_output_few_shot_prompt = """- 真实性：{label}
 - 原因：{rationale}
 """
 
 
-en_input_few_shot_prompt = """Input: <text>{news_text}</text>"""
+en_input_prompt = """Input: <text>{news_text}</text>"""
 en_output_few_shot_prompt = """- Authenticity: {label}
 - Reason: {rationale}
 """
@@ -115,16 +116,16 @@ class  Prompt:
         self.lang = lang
         if lang == 'zh':
             self.system_prompt = zh_rationale_prompt_dict[rationale_type].format(max_tokens=max_tokens)
+            self.input_prompt = zh_input_prompt
             if use_few_shot:
                 self.system_prompt += "以下是一些示例：\n"
-                self.few_shot_input = zh_input_few_shot_prompt
                 self.few_shot_output = zh_output_few_shot_prompt
 
         elif lang == 'en':
             self.system_prompt = en_rationale_prompt_dict[rationale_type].format(max_tokens=max_tokens)
+            self.input_prompt = en_input_prompt
             if use_few_shot:
                 self.system_prompt += "Here are some examples:\n"
-                self.few_shot_input = en_input_few_shot_prompt
                 self.few_shot_output = en_output_few_shot_prompt
 
 
@@ -183,6 +184,13 @@ def validate_model_en_output(output):
         return {}
 
 
+class CustomPrinter(PrettyPrinter):
+    def _format(self, obj, *args):
+        if isinstance(obj, str) and len(obj) > 10000:  # 自定义超长字符串处理
+            return f'"{obj[:20]}...{obj[-20:]}" ({len(obj)} chars)', True
+        return super()._format(obj, *args)
+
+
 
 
 class IMGRationaleMessageUtil:
@@ -233,13 +241,69 @@ class IMGRationaleMessageUtil:
         return self.wrapper_message0(item['image_path'],few_shot_data)
 
 
+class ITCRationaleMessageUtil:
+    def __init__(self, lang, use_few_shot, max_tokens, image_url_type):
+        self.lang = lang
+        self.prompt = Prompt(lang, 'itc', use_few_shot, max_tokens)
+        self.image_url_wrapper_func = wrapper_remote_msg_image_content if image_url_type == 'remote' else wrapper_local_msg_image_content
+        self.valid_output_func = validate_model_zh_output if lang == 'zh' else validate_model_en_output
+
+    def valid_output(self, output):
+        return self.valid_output_func(output)
+
+    def wrapper_message0(self,input_image_path,input_text,few_shot_data):
+
+        """
+        包装单个msg
+        input_image_path : abs image path
+        few_shot_data : few shot data ,[
+            {image_path,text,rationale,label}
+        ]
+        """
+        msg = [
+            {
+                'role':'system',
+                'content':self.prompt.system_prompt
+            }
+        ]
+        if few_shot_data:
+            for item in few_shot_data:
+                msg.append({
+                    'role':'user',
+                    'content':[
+                        {'type':'text','text': self.prompt.input_prompt.format(news_text=item['text'])},
+                        self.image_url_wrapper_func(item['image_path'])
+                    ]
+                })
+                msg.append({
+                    'role':'assistant',
+                    'content':self.prompt.few_shot_output.format(rationale=item['rationale'],label=item['label'])
+                })
+
+        msg.append({
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': self.prompt.input_prompt.format(news_text=input_text)},
+                self.image_url_wrapper_func(input_image_path)
+            ]
+        })
+
+        return msg
+
+    def wrapper_message(self,item,few_shot_data):
+        return self.wrapper_message0(item['image_path'],item['text'],few_shot_data)
+
+
+
 
 def get_messageUtil(rationale_type,lang,use_few_shot,max_tokens,image_url_type):
     if rationale_type == 'img':
         return IMGRationaleMessageUtil(lang,use_few_shot,max_tokens,image_url_type)
+    elif rationale_type == 'itc':
+        return ITCRationaleMessageUtil(lang,use_few_shot,max_tokens,image_url_type)
     else:
-        # TODO 未完成
-        raise ValueError(f"Unsupported rationale_type: {rationale_type}")
+        # TODO 处理其他类型
+        raise ValueError(f"Invalid rationale_type: {rationale_type}")
 
 
 class CacheManager:
