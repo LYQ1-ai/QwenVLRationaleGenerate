@@ -32,6 +32,7 @@ predict_system_zh_prompt_template2 = """你是一名新闻真实性分析员,下
 
 <合规示例>
 <label>真</label>
+以下一个正确示例：
 """
 
 predict_zh_input_template = """<待校验新闻>
@@ -51,6 +52,7 @@ predict_system_en_prompt_template2 = """You are a news authenticity analyst. The
 ❌ Conclusion: `<label>real</label>` 
 
 <Valid Example> `<label>real</label>` 
+The following is a correct example:
 """
 predict_en_input_template = """<News to Verify>
 {news_content}"""
@@ -163,7 +165,7 @@ class DeepSeekPredictMessageUtil:
                 ,
                 {
                     'role': 'assistant',
-                    'content': 'fake'
+                    'content': '<label>fake</label>'
                 }
             ]
         elif self.lang == 'zh':
@@ -175,7 +177,7 @@ class DeepSeekPredictMessageUtil:
                 ,
                 {
                     'role': 'assistant',
-                    'content': '假'
+                    'content': '<label>假</label>'
                 }
             ]
         else:

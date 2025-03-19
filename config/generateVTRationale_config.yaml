@@ -1,16 +1,16 @@
 
 dataset: weibo
 qwen_path: /home/lyq/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4
-root_path: /home/lyq/DataSet/FakeNews/weibo_dataset
-batch_size: 128
-rationale_name: itc
+root_path: /media/shared_d/lyq/DataSet/FakeNews/weibo_dataset
+batch_size: 1
+rationale_name: img
 few_shot:
   enable: true
   num_few_shot: 4
-  few_shot_dir: /home/lyq/DataSet/FakeNews/LLMFND_few_shot
+  few_shot_dir: /media/shared_d/lyq/DataSet/FakeNews/LLMFND_few_shot
 QwenConfig:
   RemoteConfig:
-   base_url: 'http://172.31.136.239:8000/v1/'
+   base_url: 'http://localhost:8000/v1/'
    model_name: '/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4/'
   # LocalConfig:
   #   gpu_memory_utilization: 0.9

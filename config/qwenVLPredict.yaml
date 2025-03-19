@@ -1,0 +1,15 @@
+
+dataset: twitter
+root_path: /media/shared_d/lyq/DataSet/FakeNews/twitter
+batch_size: 256
+ModelConfig:
+  cache_file_path: 'qwen2vl72B_pred.pkl'
+  save_file_path: 'qwen2vl72B_pred.csv'
+  RemoteConfig:
+    base_url: 'http://localhost:8000/v1'
+    api_key: 'vllm'
+    model_name: '/Model/Qwen2-VL-72B-Instruct-GPTQ-Int4/'
+  generateConfig:
+    temperature: 0.7
+    top_p: 0.8
+    repetition_penalty: 1.00

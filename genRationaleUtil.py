@@ -365,6 +365,8 @@ def filter_batch_input(batch_input,exist_ids):
     return [item for item in batch_input if item['source_id'] not in exist_ids]
 
 
+
+
 def filter_batch_out(batch_out,exist_ids):
     """
     batch_out = [
